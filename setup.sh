@@ -52,6 +52,30 @@ setup_directories() {
     print_success "Directories created"
 }
 
+# Clone 42Header plugin
+clone_42header() {
+    print_info "Cloning 42Header plugin..."
+    
+    # Remove existing 42header directory if it exists
+    if [ -d ~/.config/nvim/nvim42header ]; then
+        rm -rf ~/.config/nvim/nvim42header
+    fi
+    
+    # Copy 42Header plugin from current directory
+    if [ -d nvim42header ]; then
+        cp -r nvim42header ~/.config/nvim/
+        print_success "42Header plugin installed from local directory"
+    else
+        git clone https://github.com/your-username/nvim42header.git ~/.config/nvim/nvim42header 2>/dev/null || {
+            print_warning "42Header plugin not found. Creating placeholder..."
+            mkdir -p ~/.config/nvim/nvim42header
+            echo "# 42Header plugin directory" > ~/.config/nvim/nvim42header/README.md
+        }
+    fi
+    
+    print_success "42Header plugin cloned"
+}
+
 # Install dependencies
 install_dependencies() {
     print_info "Checking dependencies..."
@@ -292,7 +316,7 @@ clone_opencode() {
         rm -rf ~/.config/nvim/opencode.nvim
     fi
     
-    # Clone the OpenCode plugin
+    # Clone OpenCode plugin
     git clone https://github.com/your-opencode-repo/opencode.nvim.git ~/.config/nvim/opencode.nvim 2>/dev/null || {
         print_warning "OpenCode plugin not found at expected URL. You'll need to add it manually."
         mkdir -p ~/.config/nvim/opencode.nvim
@@ -302,11 +326,39 @@ clone_opencode() {
     print_success "OpenCode plugin cloned"
 }
 
+# Clone 42Header plugin
+clone_42header() {
+    print_info "Cloning 42Header plugin..."
+    
+    # Remove existing 42header directory if it exists
+    if [ -d ~/.config/nvim/nvim42header ]; then
+        rm -rf ~/.config/nvim/nvim42header
+    fi
+    
+    # Copy 42Header plugin from current directory
+    if [ -d nvim42header ]; then
+        cp -r nvim42header ~/.config/nvim/
+        print_success "42Header plugin installed from local directory"
+    else
+        git clone https://github.com/your-username/nvim42header.git ~/.config/nvim/nvim42header 2>/dev/null || {
+            print_warning "42Header plugin not found. Creating placeholder..."
+            mkdir -p ~/.config/nvim/nvim42header
+            echo "# 42Header plugin directory" > ~/.config/nvim/nvim42header/README.md
+        }
+    fi
+    
+    print_success "42Header plugin cloned"
+}
+    
+    print_success "OpenCode plugin cloned"
+}
+
 # Setup Neovim configuration
 setup_neovim() {
     print_info "Setting up Neovim configuration..."
     
     clone_opencode
+    clone_42header
     
     cat > ~/.config/nvim/init.lua << 'EOF'
 vim.g.mapleader = ' '
@@ -363,6 +415,16 @@ require("lazy").setup({
       })
       vim.keymap.set('n', '<leader>oc', ':Opencode<CR>', { desc = "Open OpenCode" })
       vim.keymap.set('v', '<leader>oc', ':Opencode<CR>', { desc = "Open OpenCode with selection" })
+    end,
+  },
+  {
+    dir = vim.fn.expand("~/.config/nvim/nvim42header"),
+    config = function()
+      require("nvim42header").setup({
+        user = vim.g.user42 or 'your_username',
+        mail = vim.g.mail42 or 'your_email@student.42.fr',
+        header_format = "full"
+      })
     end,
   },
   {
@@ -515,38 +577,7 @@ vim.keymap.set('n', '<leader>lsp', function()
   end
 end, { desc = "Start LSP manually" })
 
--- 42 Header Plugin (built-in, no external dependencies)
-local function insert_42_header()
-  local filename = vim.fn.expand("%:t")
-  local user = vim.g.user42 or 'your_username'
-  local mail = vim.g.mail42 or 'your_email@student.42.fr'
-  local date = os.date("%Y/%m/%d %H:%M:%S")
-  
-  local header = {
-    "/* ************************************************************************** */",
-    "/*                                                                            */",
-    "/*                                                        :::      ::::::::   */",
-    "/*   " .. filename .. string.rep(" ", 46 - #filename) .. " :+:      :+:    :+:   */",
-    "/*                                                    +:+ +:+         +:+     */",
-    "/*   By: " .. user .. " <" .. mail .. ">          +#+  +:+       +#+        */",
-    "/*                                                +#+#+#+#+#+   +#+           */",
-    "/*   Created: " .. date .. " by " .. user .. "          #+#    #+#             */",
-    "/*   Updated: " .. date .. " by " .. user .. "         ###   ########.fr       */",
-    "/*                                                                            */",
-    "/* ************************************************************************** */",
-    ""
-  }
-  
-  -- Insert at the beginning of the file
-  vim.api.nvim_buf_set_lines(0, 0, 0, false, header)
-  print("42 header inserted!")
-end
-
--- Create command and keymap
-vim.api.nvim_create_user_command("Stdheader", insert_42_header, { desc = "Insert 42 header" })
-vim.keymap.set('n', '<F1>', insert_42_header, { desc = "Insert 42 header" })
-
--- Set default values (can be overridden)
+-- 42 Header Configuration
 vim.g.user42 = vim.g.user42 or 'your_username'
 vim.g.mail42 = vim.g.mail42 or 'your_email@student.42.fr'
 
@@ -565,10 +596,16 @@ vim.api.nvim_create_user_command("OpenCodeInfo", function()
   print("  help - Show full help")
   print("")
   print("42 Header:")
-  print("  :Stdheader - Insert 42 school header")
-  print("  <F1> - Insert 42 school header")
-  print("  vim.g.user42 = 'your_username' (to set your name)")
-  print("  vim.g.mail42 = 'your_email@student.42.fr' (to set your email)")
+  print("  :Stdheader - Insert/Update 42 school header")
+  print("  :StdheaderInsert - Insert new 42 header")
+  print("  :StdheaderUpdate - Update existing header")
+  print("  :42SetUser [username] - Set or show username")
+  print("  :42SetMail [email] - Set or show email")
+  print("  :42Format [full/minimal] - Set header format")
+  print("  <F1> - Insert/update 42 header")
+  print("  <leader>h - Insert/update 42 header")
+  print("  <leader>hi - Insert new 42 header")
+  print("  <leader>hu - Update existing header")
   print("")
   print("NERDCommenter:")
   print("  <leader>cc - Comment line")
