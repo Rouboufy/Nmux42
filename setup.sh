@@ -165,7 +165,10 @@ check_and_install_deps() {
     # 4. Tmux
     install_package tmux
 
-    # 5. Node (Optional, for some LSPs)
+    # 5. Starship
+    install_package starship
+
+    # 6. Node (Optional, for some LSPs)
     # check_node_version
 }
 
@@ -212,6 +215,33 @@ clone_opencode() {
         mkdir -p ~/.config/nvim/opencode.nvim
         echo "# OpenCode" > ~/.config/nvim/opencode.nvim/README.md
     }
+}
+
+setup_starship() {
+    print_info "Configuring Starship..."
+
+    mkdir -p ~/.config
+    
+    # Copy/Link starship.toml if it exists in the current directory (where script is run)
+    if [ -f "./starship.toml" ]; then
+        cp ./starship.toml ~/.config/starship.toml
+        print_success "Starship config installed."
+    else
+        print_warning "starship.toml not found in script directory. Using default."
+    fi
+
+    # Ensure ~/.zshrc exists
+    if [ ! -f ~/.zshrc ]; then
+        touch ~/.zshrc
+    fi
+    
+    # Add starship init to .zshrc if not present
+    if ! grep -q "starship init zsh" ~/.zshrc; then
+        echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+        print_success "Added Starship init to .zshrc"
+    else
+        print_success "Starship already initialized in .zshrc"
+    fi
 }
 
 setup_neovim() {
@@ -715,6 +745,7 @@ main() {
     setup_neovim
     setup_tmux
     setup_ghostty
+    setup_starship
     install_tmux_plugins
     create_info
 
