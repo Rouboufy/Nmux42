@@ -33,8 +33,8 @@ command_exists() {
 # Check OS
 OS="$(uname -s)"
 case "${OS}" in
-    Linux*)     MACHINE=Linux;;
-    Darwin*)    MACHINE=Mac;;
+    Linux*)     MACHINE=Linux;; 
+    Darwin*)    MACHINE=Mac;; 
     *)          MACHINE="UNKNOWN:${OS}"
 esac
 
@@ -181,6 +181,27 @@ setup_directories() {
     mkdir -p ~/.local/state/nvim
     mkdir -p ~/.cache/nvim
     mkdir -p ~/.tmux/plugins
+}
+
+setup_ghostty() {
+    print_info "Configuring Ghostty Terminal..."
+    
+    mkdir -p ~/.config/ghostty
+    
+    if [ ! -f ~/.config/ghostty/config ]; then
+        echo "theme = catppuccin-mocha" > ~/.config/ghostty/config
+        print_success "Ghostty config created with Catppuccin theme."
+    else
+        if ! grep -q "theme = catppuccin-mocha" ~/.config/ghostty/config; then
+             # Backup existing config
+             cp ~/.config/ghostty/config ~/.config/ghostty/config.bak
+             # Appending theme setting
+             echo "theme = catppuccin-mocha" >> ~/.config/ghostty/config
+             print_success "Ghostty config updated (backup created)."
+        else
+             print_success "Ghostty already configured."
+        fi
+    fi
 }
 
 clone_opencode() {
@@ -388,7 +409,7 @@ require("lazy").setup({
         pattern = { "c", "cpp", "h", "hpp" },
         callback = function(args)
           local bufnr = args.buf
-          vim.schedule(function() 
+          vim.schedule(function()
             if #vim.lsp.get_clients({ bufnr = bufnr }) == 0 then
               vim.lsp.start({
                 name = "clangd",
@@ -693,6 +714,7 @@ main() {
     check_and_install_deps
     setup_neovim
     setup_tmux
+    setup_ghostty
     install_tmux_plugins
     create_info
 
