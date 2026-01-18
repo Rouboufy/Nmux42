@@ -1,4 +1,4 @@
-# My Neovim Configuration
+# Nmux42
 
 A personalized Neovim and Tmux setup for development, featuring AI integration, efficient navigation, and modern aesthetics.
 
