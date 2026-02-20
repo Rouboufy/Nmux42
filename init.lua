@@ -83,7 +83,7 @@ require("lazy").setup({
           enabled = true,
           auto_trigger = true,
           keymap = {
-            accept = "<C-CR>", -- Ctrl + Enter to accept suggestion
+            accept = "<M-l>", -- Reverted to Alt + l
           },
         },
         panel = { enabled = false },

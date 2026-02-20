@@ -53,6 +53,12 @@ install_package() {
     fi
     print_info "Installing $PACKAGE..."
     ensure_brew
+    # Re-eval brew env before installing
+    if [ "$MACHINE" = "Linux" ]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
+    else
+        eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
+    fi
     brew install "$PACKAGE"
 }
 
@@ -60,15 +66,19 @@ setup_path() {
     print_info "Configuring shell PATH..."
     for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
         [ -f "$RC" ] || touch "$RC"
-        if ! grep -q "export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"" "$RC"; then
-            echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "$RC"
-        fi
+        
+        # 1. Homebrew Environment (Should be early)
         if ! grep -q "brew shellenv" "$RC"; then
             if [ "$MACHINE" = "Linux" ]; then
                 echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$RC"
             else
                 echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$RC"
             fi
+        fi
+
+        # 2. Local Bins
+        if ! grep -q "export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"" "$RC"; then
+            echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "$RC"
         fi
     done
 }
@@ -78,12 +88,12 @@ setup_starship() {
     mkdir -p ~/.config
     [ -f "./starship.toml" ] && cp ./starship.toml ~/.config/starship.toml
 
-    # Add to .zshrc
+    # Add to .zshrc at the very end
     if [ -f "$HOME/.zshrc" ] && ! grep -q "starship init zsh" "$HOME/.zshrc"; then
         echo -e '\n# Starship Prompt\neval "$(starship init zsh)"' >> "$HOME/.zshrc"
         print_success "Added Starship to .zshrc"
     fi
-    # Add to .bashrc
+    # Add to .bashrc at the very end
     if [ -f "$HOME/.bashrc" ] && ! grep -q "starship init bash" "$HOME/.bashrc"; then
         echo -e '\n# Starship Prompt\neval "$(starship init bash)"' >> "$HOME/.bashrc"
         print_success "Added Starship to .bashrc"
@@ -156,7 +166,7 @@ require("lazy").setup({
   { "folke/tokyonight.nvim", config = function() vim.cmd.colorscheme("tokyonight") end },
   { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = { theme = 'tokyonight' } },
   { "saghen/blink.cmp", version = "*", opts = { keymap = { preset = "default" }, sources = { default = { "lsp", "path", "snippets", "buffer" } } } },
-  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<C-CR>" } } }) end },
+  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<M-l>" } } }) end },
   { "neovim/nvim-lspconfig" },
   { "mason-org/mason.nvim" },
   { "christoomey/vim-tmux-navigator", lazy = false },
