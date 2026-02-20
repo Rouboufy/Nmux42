@@ -1,70 +1,73 @@
 # Nmux42
 
-A personalized Neovim and Tmux setup for development, synchronized with my current settings.
+A professional, high-performance development environment for **42 School**, **Arch Linux**, and **macOS**. This repository provides a "one-command" setup for Neovim, Tmux, Zsh, and essential compilers.
 
-## 🚀 Installation
+## 🚀 One-Command Installation
+
+Clone and run the smart setup script:
 
 ```bash
-git clone https://github.com/Rouboufy/config.git
-cd config
-./setup.sh
+git clone https://github.com/Rouboufy/Nmux42.git
+cd Nmux42
+bash setup.sh
 ```
 
-## ✨ Features
+## ✨ "Smart" Features
 
-- **Cross-Platform Support**: Works seamlessly on **macOS** and **Linux**.
-- **Smart Dependency Management**: 
-    - Automatically checks for and installs required software: `Neovim`, `Tmux`, `Git`, and `Curl`.
-    - **Intelligent Privilege Handling**: Uses system package managers (`apt`, `dnf`, `yum`, `pacman`) if `sudo` is available.
-    - **Homebrew Fallback**: If you don't have sudo privileges, the script automatically uses **Homebrew** to install dependencies.
-- **Zero-Config Deployment**: Sets up your environment in one go.
+- **Arch Linux Native**: Automatically detects Arch and uses `pacman` with `sudo` for high-performance native binaries.
+- **42 School & macOS Optimized**: Falls back to **Homebrew** if `sudo` is unavailable or on macOS.
+- **Auto-Configured Shell**: Generates a clean, organized `.zshrc` with auto-loading for Homebrew, aliases, and Starship.
+- **Automated PATH Management**: Handles `~/.local/bin`, `~/.cargo/bin`, and Homebrew paths automatically.
 
-## ⌨️ Keybindings & Shortcuts
+## 📦 What's Included?
 
-### General
+### Core Applications
+- **Neovim (v0.10+)**: Modern Lua-based config with Lazy.nvim.
+- **Tmux**: Power-user configuration with `Ctrl-a` prefix and seamless Vim navigation.
+- **Starship**: Fast, customizable shell prompt.
+- **Zsh**: Automatically configured as the default shell.
+
+### Compilers & Runtimes (Auto-Installed)
+- **C/C++**: `gcc`, `clang`
+- **Python**: `python3` (with `pyright` LSP)
+- **Go**: `go`
+- **Optional**: `Zig`, `Node.js`, `TypeScript`, `JavaScript` (via interactive prompts).
+
+## ⌨️ Keybindings
+
+### 🧠 GitHub Copilot
+| Shortcut | Action |
+|----------|--------|
+| **`Alt + l`** | **Accept Suggestion** (Ghost Text) |
+| `:Copilot setup` | Initial Authentication |
+
+### 🔭 Neovim (Leader is Space)
 | Shortcut | Action |
 |----------|--------|
 | `<leader>cd` | Open File Explorer (NetRW) |
-
-### 🔭 Telescope (Search)
-| Shortcut | Action |
-|----------|--------|
-| `<leader>ff` | **F**ind **F**iles |
-| `<leader>fg` | **F**ind **G**rep (Live text search) |
-| `<leader>fb` | **F**ind **B**uffers |
-| `<leader>fh` | **F**ind **H**elp tags |
-
-### ⚓ Harpoon
-| Shortcut | Action |
-|----------|--------|
+| `<leader>ff` | Find Files (Telescope) |
+| `<leader>fg` | Live Grep (Telescope) |
 | `<leader>a` | Add file to Harpoon |
-| `Ctrl+e` | Toggle Harpoon Menu |
+| `Ctrl + e` | Toggle Harpoon Menu |
 
-### 🧠 LSP (Language Server)
+### 🖥️ Tmux & Navigation
 | Shortcut | Action |
 |----------|--------|
-| `gd` | Go to Definition |
-| `K` | Hover Documentation |
-| `gi` | Go to Implementation |
-| `gr` | Go to References |
-| `<space>rn` | Rename Symbol |
-| `<space>ca` | Code Action |
-| `<space>e` | Open Diagnostics (Error) Float |
-| `[d` / `]d` | Previous / Next Diagnostic |
+| **`Ctrl + a`** | **Prefix Key** (instead of Ctrl-b) |
+| `Ctrl + a` followed by `|` | Split Vertical |
+| `Ctrl + a` followed by `-` | Split Horizontal |
+| **`Ctrl + h/j/k/l`** | **Direct Navigation** between Tmux panes AND Neovim splits (No prefix needed!) |
 
-### 🖥️ Tmux Navigation
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+h` | Move Left (Pane/Window) |
-| `Ctrl+j` | Move Down (Pane/Window) |
-| `Ctrl+k` | Move Up (Pane/Window) |
-| `Ctrl+l` | Move Right (Pane/Window) |
-| `Ctrl+a` | Tmux Prefix |
+## 🛠️ Post-Installation
+1. **Restart your terminal** after running `setup.sh`.
+2. Open Neovim (`nvim`) and wait for `lazy.nvim` to install plugins.
+3. Run `:Copilot setup` to link your GitHub account.
+4. Run `:Mason` to manage additional LSPs and formatters.
 
-## 📦 Plugins Included
-- **Core**: `lazy.nvim`, `plenary.nvim`
-- **UI**: `tokyonight.nvim` (Theme), `lualine.nvim`
-- **Navigation**: `telescope.nvim`, `vim-tmux-navigator`, `harpoon`
-- **Coding**: `blink.cmp` (Completion), `nvim-lspconfig`, `mason.nvim`
-- **Utils**: `vim-fugitive`, `nvim-osc52`, `nvim-colorizer.lua`
-- **Syntax**: `nvim-treesitter`
+## 📂 Organized .zshrc
+The script generates a structured `.zshrc` including:
+- **Environment**: Proper PATH exports for all your tools.
+- **Homebrew**: Auto-detection and loading.
+- **Aliases**: `v` (nvim), `ll` (long list), `gs` (git status).
+- **History**: Optimized history settings and completions.
+- **Starship**: Initialized at the very end for maximum compatibility.

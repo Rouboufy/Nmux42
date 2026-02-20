@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ========================================
-# Neovim & Tmux Setup Script (42 Optimized)
+# Ultimate Dev Setup Script (42 & Arch Optimized)
 # Author: Rouboufy
 # ========================================
 
@@ -23,124 +23,144 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# OS Check
+# OS/Distro Detection
 OS="$(uname -s)"
-case "${OS}" in
-    Linux*)     MACHINE=Linux;; 
-    Darwin*)    MACHINE=Mac;; 
-    *)          MACHINE="UNKNOWN:${OS}";;
-esac
+IS_ARCH=false
+[ -f /etc/arch-release ] && IS_ARCH=true
 
-# Homebrew Installation
+# Homebrew Fallback
 ensure_brew() {
-    if command_exists brew; then
-        return
-    fi
+    if command_exists brew; then return; fi
     print_info "Homebrew not found. Installing..."
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    if [ "$MACHINE" = "Linux" ]; then
+    if [ "$OS" = "Linux" ]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
     else
         eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
     fi
 }
 
+# Smart Package Installer
 install_package() {
     PACKAGE=$1
-    if command_exists "$PACKAGE"; then
+    ALT_NAME=$2 # For cases like nodejs vs node
+    
+    if command_exists "$PACKAGE" || ([ -n "$ALT_NAME" ] && command_exists "$ALT_NAME"); then
         print_success "$PACKAGE is already installed."
         return
     fi
-    print_info "Installing $PACKAGE..."
-    ensure_brew
-    # Re-eval brew env before installing
-    if [ "$MACHINE" = "Linux" ]; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
+
+    if [ "$IS_ARCH" = true ] && command_exists pacman; then
+        print_info "Arch detected: Installing $PACKAGE via pacman..."
+        sudo pacman -S --noconfirm "$PACKAGE"
     else
-        eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
+        print_info "Installing $PACKAGE via Homebrew..."
+        ensure_brew
+        # Re-eval brew session
+        if [ "$OS" = "Linux" ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
+        else
+            eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
+        fi
+        brew install "$PACKAGE"
     fi
-    brew install "$PACKAGE"
 }
 
-setup_path() {
-    print_info "Configuring shell PATH..."
-    for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
-        [ -f "$RC" ] || touch "$RC"
-        
-        # 1. Homebrew Environment (Should be early)
-        if ! grep -q "brew shellenv" "$RC"; then
-            if [ "$MACHINE" = "Linux" ]; then
-                echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$RC"
-            else
-                echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$RC"
-            fi
-        fi
+# Ask User for Extras
+ask_optional() {
+    print_info "--- Optional Packages ---"
+    read -p "Install Zig? (y/N): " install_zig
+    read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
 
-        # 2. Local Bins
-        if ! grep -q "export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"" "$RC"; then
-            echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "$RC"
+    if [[ "$install_zig" =~ ^[Yy]$ ]]; then
+        install_package zig
+    fi
+
+    if [[ "$install_node" =~ ^[Yy]$ ]]; then
+        if [ "$IS_ARCH" = true ]; then
+            install_package nodejs
+            install_package npm
+        else
+            install_package node
         fi
-    done
+        # Install global TS
+        if command_exists npm; then
+            print_info "Installing TypeScript globally..."
+            sudo npm install -g typescript 2>/dev/null || npm install -g typescript
+        fi
+    fi
 }
 
-setup_starship() {
-    print_info "Configuring Starship..."
-    mkdir -p ~/.config
-    [ -f "./starship.toml" ] && cp ./starship.toml ~/.config/starship.toml
+setup_organized_zshrc() {
+    print_info "Generating organized .zshrc..."
+    ZSHRC="$HOME/.zshrc"
+    
+    # Backup existing
+    [ -f "$ZSHRC" ] && cp "$ZSHRC" "${ZSHRC}.bak"
 
-    # Add to .zshrc at the very end
-    if [ -f "$HOME/.zshrc" ] && ! grep -q "starship init zsh" "$HOME/.zshrc"; then
-        echo -e '\n# Starship Prompt\neval "$(starship init zsh)"' >> "$HOME/.zshrc"
-        print_success "Added Starship to .zshrc"
-    fi
-    # Add to .bashrc at the very end
-    if [ -f "$HOME/.bashrc" ] && ! grep -q "starship init bash" "$HOME/.bashrc"; then
-        echo -e '\n# Starship Prompt\neval "$(starship init bash)"' >> "$HOME/.bashrc"
-        print_success "Added Starship to .bashrc"
-    fi
+    cat > "$ZSHRC" << 'EOF'
+# ========================================
+# Organized ZSH Configuration
+# ========================================
+
+# --- PATH & Environment ---
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
+
+# --- Homebrew ---
+if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [ -d "/opt/homebrew" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# --- Aliases ---
+alias v="nvim"
+alias vi="nvim"
+alias nvimconfig="cd ~/.config/nvim && v init.lua"
+alias ls="ls --color=auto"
+alias ll="ls -lah"
+alias gs="git status"
+
+# --- Completion & History ---
+autoload -Uz compinit && compinit
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+
+# --- Starship Prompt (Must be at the end) ---
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
+EOF
+    print_success ".zshrc organized (Previous config backed up to .zshrc.bak)."
 }
 
 setup_tmux() {
     print_info "Configuring Tmux..."
     cat > ~/.tmux.conf << 'EOF'
-# Prefix
 unbind C-b
 set -g prefix C-a
 bind C-a send-prefix
-
-# Quality of Life
 set -g mouse on
 set -g base-index 1
 setw -g pane-base-index 1
 set -g renumber-windows on
 set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ",*256col*:Tc"
-
-# Splits
 bind | split-window -h -c "#{pane_current_path}"
 bind - split-window -v -c "#{pane_current_path}"
-unbind '"'
-unbind %
-
-# Tmux-Navigator (Vim Style)
-is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
-    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
 bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
 bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
 bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
 bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
-
-# TPM Plugins
 set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'christoomey/vim-tmux-navigator'
-
-if "test ! -d ~/.tmux/plugins/tpm" \
-   "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
-
+if "test ! -d ~/.tmux/plugins/tpm" "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
 run '~/.tmux/plugins/tpm/tpm'
 EOF
-    print_success "Tmux configured."
 }
 
 setup_neovim() {
@@ -174,21 +194,41 @@ require("lazy").setup({
 })
 
 require("mason").setup()
-if vim.lsp.enable then 
-  vim.lsp.enable({"clangd", "lua_ls", "pyright"}) 
-end
+if vim.lsp.enable then vim.lsp.enable({"clangd", "lua_ls", "pyright"}) end
 EOF
-    print_success "Neovim configured."
 }
 
 main() {
-    setup_path
+    print_info "Starting Comprehensive Setup..."
+    
+    # Essential Tools
     install_package nvim
     install_package tmux
     install_package starship
-    setup_starship
+    install_package git
+    install_package curl
+    install_package zsh
+    
+    # Compilers & Runtimes
+    install_package gcc
+    install_package clang
+    install_package python
+    install_package go
+    
+    # Optional Packages
+    ask_optional
+    
+    # Configurations
+    setup_organized_zshrc
     setup_tmux
     setup_neovim
+    
+    # Change Shell
+    if [ "$SHELL" != "$(which zsh)" ]; then
+        print_info "Changing default shell to zsh..."
+        chsh -s "$(which zsh)"
+    fi
+
     print_success "Setup Complete! PLEASE RESTART YOUR TERMINAL."
 }
 
