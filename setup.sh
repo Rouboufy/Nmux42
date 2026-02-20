@@ -40,13 +40,6 @@ ensure_brew() {
 
     print_info "Homebrew not found. Starting installation..."
 
-    # 42 School specific check: install in goinfre if home is limited
-    if [ -d "/goinfre/$USER" ] || [ -d "/sgoinfre/$USER" ]; then
-        print_info "42 Environment detected. Attempting to install Homebrew in goinfre..."
-        # Note: Standard brew install script doesn't love being moved, 
-        # but we'll try the official way first.
-    fi
-
     if ! command_exists curl; then
         print_error "curl is required to install Homebrew. Please install curl first."
         exit 1
@@ -82,6 +75,21 @@ install_package() {
     brew install "$PACKAGE"
 }
 
+install_opencode() {
+    if command_exists opencode; then
+        print_success "OpenCode is already installed."
+        return
+    fi
+
+    print_info "Attempting to install OpenCode..."
+    # Attempting npm install for opencode if node exists
+    if command_exists npm; then
+        npm install -g opencode 2>/dev/null || print_warning "npm install -g opencode failed. Please install manually."
+    else
+        print_warning "Node/NPM not found. Skipping OpenCode automatic installation."
+    fi
+}
+
 setup_path() {
     print_info "Configuring shell environment (.zshrc)..."
     ZSHRC="$HOME/.zshrc"
@@ -101,6 +109,68 @@ setup_path() {
         fi
     fi
     print_success "PATH updated in .zshrc"
+}
+
+setup_starship() {
+    print_info "Configuring Starship..."
+    mkdir -p ~/.config
+    
+    # Copy starship.toml from current directory if it exists
+    if [ -f "./starship.toml" ]; then
+        cp ./starship.toml ~/.config/starship.toml
+        print_success "Starship config installed from starship.toml"
+    else
+        print_warning "starship.toml not found in current directory. Creating basic config."
+        echo 'format = "$all"' > ~/.config/starship.toml
+    fi
+
+    # Add to .zshrc
+    ZSHRC="$HOME/.zshrc"
+    if ! grep -q "starship init zsh" "$ZSHRC"; then
+        echo 'eval "$(starship init zsh)"' >> "$ZSHRC"
+        print_success "Added Starship init to .zshrc"
+    fi
+}
+
+setup_tmux() {
+    print_info "Configuring Tmux..."
+    cat > ~/.tmux.conf << 'EOF'
+# Prefix key
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Basic Settings
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",*256col*:Tc"
+set -g mouse on
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+
+# Key Bindings
+bind r source-file ~/.tmux.conf \; display "Config reloaded!"
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Navigate panes (Vim style)
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# TPM Plugins
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'christoomey/vim-tmux-navigator'
+
+# Initialize TPM
+if "test ! -d ~/.tmux/plugins/tpm" \
+   "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
+
+run '~/.tmux/plugins/tpm/tpm'
+EOF
+    print_success "Tmux configured."
 }
 
 setup_neovim() {
@@ -136,100 +206,24 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-  -- Colorscheme
-  {
-    "folke/tokyonight.nvim",
-    config = function()
-      vim.cmd.colorscheme("tokyonight")
-      vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
-    end
-  },
-
-  -- Lualine
-  {
-    "nvim-lualine/lualine.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    opts = { theme = 'tokyonight' }
-  },
-
-  -- Completion
-  {
-    "saghen/blink.cmp",
-    version = "*",
-    opts = {
-      keymap = { preset = "default" },
-      sources = {
-        default = { "lsp", "path", "snippets", "buffer" },
-      },
-    },
-  },
-
-  -- Harpoon
-  {
-    "ThePrimeagen/harpoon",
-    config = function()
-      local harpoon = require("harpoon")
-      vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
-      vim.keymap.set("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
-    end,
-  },
-
-  -- Copilot
-  {
-    "zbirenbaum/copilot.lua",
-    cmd = "Copilot",
-    event = "InsertEnter",
-    config = function()
-      require("copilot").setup({
-        suggestion = {
-          enabled = true,
-          auto_trigger = true,
-          keymap = { accept = "<M-l>" },
-        },
-        panel = { enabled = false },
-      })
-    end,
-  },
-
+  { "folke/tokyonight.nvim", config = function() vim.cmd.colorscheme("tokyonight") end },
+  { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = { theme = 'tokyonight' } },
+  { "saghen/blink.cmp", version = "*", opts = { keymap = { preset = "default" }, sources = { default = { "lsp", "path", "snippets", "buffer" } } } },
+  { "ThePrimeagen/harpoon", config = function() local h = require("harpoon") vim.keymap.set("n", "<leader>a", function() h:list():add() end) end },
+  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<M-l>" } } }) end },
   { "neovim/nvim-lspconfig" },
   { "mason-org/mason.nvim" },
   { "tpope/vim-fugitive" },
   { "ojroques/nvim-osc52" },
-  {
-    "norcalli/nvim-colorizer.lua",
-    config = function() require("colorizer").setup() end,
-  },
-
-  -- Telescope
-  {
-    "nvim-telescope/telescope.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-      local builtin = require("telescope.builtin")
-      vim.keymap.set("n", "<leader>ff", builtin.find_files)
-      vim.keymap.set("n", "<leader>fg", builtin.live_grep)
-    end,
-  },
-
-  -- Tmux Navigator
+  { "norcalli/nvim-colorizer.lua", config = function() require("colorizer").setup() end },
+  { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
   { "christoomey/vim-tmux-navigator", lazy = false },
-
-  -- Treesitter
-  {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    opts = {
-      highlight = { enable = true },
-      ensure_installed = { "c", "lua", "vim", "python", "typescript" },
-      auto_install = true,
-    },
-    config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
-  },
+  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", opts = { highlight = { enable = true }, ensure_installed = { "c", "lua", "vim", "python" }, auto_install = true }, config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end },
 })
 
 require("mason").setup()
 if vim.lsp.enable then
-  vim.lsp.enable({"clangd", "ts_ls", "lua_ls", "python"})
+  vim.lsp.enable({"clangd", "lua_ls", "python"})
 end
 EOF
     print_success "Neovim configured."
@@ -237,7 +231,7 @@ EOF
 
 # Main Execution
 main() {
-    print_info "Starting Setup for $MACHINE..."
+    print_info "Starting Full Setup..."
     
     mkdir -p ~/.config ~/.local/bin ~/.tmux/plugins
     
@@ -249,9 +243,12 @@ main() {
     install_package starship
     
     setup_neovim
+    setup_tmux
+    setup_starship
+    install_opencode
     
     print_success "Setup Complete! PLEASE RUN: source ~/.zshrc"
-    print_info "Then run 'nvim' and wait for plugins to install."
+    print_info "Then run 'nvim' to finish plugin installation."
 }
 
 main "$@"
