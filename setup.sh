@@ -80,11 +80,13 @@ setup_starship() {
 
     # Add to .zshrc
     if [ -f "$HOME/.zshrc" ] && ! grep -q "starship init zsh" "$HOME/.zshrc"; then
-        echo 'eval "$(starship init zsh)"' >> "$HOME/.zshrc"
+        echo -e '\n# Starship Prompt\neval "$(starship init zsh)"' >> "$HOME/.zshrc"
+        print_success "Added Starship to .zshrc"
     fi
     # Add to .bashrc
     if [ -f "$HOME/.bashrc" ] && ! grep -q "starship init bash" "$HOME/.bashrc"; then
-        echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
+        echo -e '\n# Starship Prompt\neval "$(starship init bash)"' >> "$HOME/.bashrc"
+        print_success "Added Starship to .bashrc"
     fi
 }
 
@@ -104,7 +106,7 @@ set -g renumber-windows on
 set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ",*256col*:Tc"
 
-# SPLITS (The missing part!)
+# Splits
 bind | split-window -h -c "#{pane_current_path}"
 bind - split-window -v -c "#{pane_current_path}"
 unbind '"'
@@ -128,7 +130,7 @@ if "test ! -d ~/.tmux/plugins/tpm" \
 
 run '~/.tmux/plugins/tpm/tpm'
 EOF
-    print_success "Tmux configured (Splits restored: | and -)."
+    print_success "Tmux configured."
 }
 
 setup_neovim() {
@@ -154,7 +156,7 @@ require("lazy").setup({
   { "folke/tokyonight.nvim", config = function() vim.cmd.colorscheme("tokyonight") end },
   { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = { theme = 'tokyonight' } },
   { "saghen/blink.cmp", version = "*", opts = { keymap = { preset = "default" }, sources = { default = { "lsp", "path", "snippets", "buffer" } } } },
-  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<M-l>" } } }) end },
+  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<C-CR>" } } }) end },
   { "neovim/nvim-lspconfig" },
   { "mason-org/mason.nvim" },
   { "christoomey/vim-tmux-navigator", lazy = false },
@@ -162,8 +164,11 @@ require("lazy").setup({
 })
 
 require("mason").setup()
-if vim.lsp.enable then vim.lsp.enable({"clangd", "lua_ls", "python"}) end
+if vim.lsp.enable then 
+  vim.lsp.enable({"clangd", "lua_ls", "pyright"}) 
+end
 EOF
+    print_success "Neovim configured."
 }
 
 main() {

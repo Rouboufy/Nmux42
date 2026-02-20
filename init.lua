@@ -1,6 +1,6 @@
 vim.opt.termguicolors = true
 print("I use Neovim btw")
-vim.env.PATH = vim.fn.expand("~/.cargo/bin") .. ":" .. vim.env.PATH
+vim.env.PATH = vim.fn.expand("~/.local/bin") .. ":" .. vim.fn.expand("~/.cargo/bin") .. ":" .. vim.env.PATH
 
 -- Options
 vim.opt.number = true
@@ -83,7 +83,7 @@ require("lazy").setup({
           enabled = true,
           auto_trigger = true,
           keymap = {
-            accept = "<M-l>", -- Alt + l to accept suggestion
+            accept = "<C-CR>", -- Ctrl + Enter to accept suggestion
           },
         },
         panel = { enabled = false },
@@ -137,7 +137,7 @@ require("lazy").setup({
     opts = {
       highlight = { enable = true },
       indent = { enable = true },
-      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "Python", "Typescript" },
+      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "python", "typescript" },
       auto_install = true,
     },
     config = function(_, opts)
@@ -154,5 +154,5 @@ require("mason").setup()
 
 -- LSP Enable (Neovim 0.11+ feature)
 if vim.lsp.enable then
-  vim.lsp.enable({"clangd", "ts_ls", "lua_ls", "python", "html.lua"})
+  vim.lsp.enable({"clangd", "lua_ls", "pyright"})
 end
