@@ -34,19 +34,10 @@ esac
 # Homebrew Installation
 ensure_brew() {
     if command_exists brew; then
-        print_success "Homebrew is already installed."
         return
     fi
-
-    print_info "Homebrew not found. Starting installation..."
-    if ! command_exists curl; then
-        print_error "curl is required to install Homebrew."
-        exit 1
-    fi
-
+    print_info "Homebrew not found. Installing..."
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    # Load Brew session
     if [ "$MACHINE" = "Linux" ]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
     else
@@ -66,17 +57,12 @@ install_package() {
 }
 
 setup_path() {
-    print_info "Configuring PATH in .zshrc and .bashrc..."
-    
+    print_info "Configuring shell PATH..."
     for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
         [ -f "$RC" ] || touch "$RC"
-        
-        # Local Bins
         if ! grep -q "export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"" "$RC"; then
             echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "$RC"
         fi
-
-        # Homebrew
         if ! grep -q "brew shellenv" "$RC"; then
             if [ "$MACHINE" = "Linux" ]; then
                 echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$RC"
@@ -90,19 +76,16 @@ setup_path() {
 setup_starship() {
     print_info "Configuring Starship..."
     mkdir -p ~/.config
-    
-    if [ -f "./starship.toml" ]; then
-        cp ./starship.toml ~/.config/starship.toml
-        print_success "Starship config installed."
-    fi
+    [ -f "./starship.toml" ] && cp ./starship.toml ~/.config/starship.toml
 
-    for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
-        if ! grep -q "starship init" "$RC"; then
-            SHELL_NAME=$(basename "$RC" | sed 's/\.//;s/rc//')
-            echo "eval \"\$(starship init $SHELL_NAME)\"" >> "$RC"
-            print_success "Added Starship init to $RC"
-        fi
-    done
+    # Add to .zshrc
+    if [ -f "$HOME/.zshrc" ] && ! grep -q "starship init zsh" "$HOME/.zshrc"; then
+        echo 'eval "$(starship init zsh)"' >> "$HOME/.zshrc"
+    fi
+    # Add to .bashrc
+    if [ -f "$HOME/.bashrc" ] && ! grep -q "starship init bash" "$HOME/.bashrc"; then
+        echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
+    fi
 }
 
 setup_tmux() {
@@ -121,7 +104,13 @@ set -g renumber-windows on
 set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ",*256col*:Tc"
 
-# Tmux-Navigator (Vim Style) - No Prefix Required
+# SPLITS (The missing part!)
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+unbind %
+
+# Tmux-Navigator (Vim Style)
 is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
     | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
 bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
@@ -134,13 +123,12 @@ set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'christoomey/vim-tmux-navigator'
 
-# Auto-install TPM and plugins
 if "test ! -d ~/.tmux/plugins/tpm" \
    "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
 
 run '~/.tmux/plugins/tpm/tpm'
 EOF
-    print_success "Tmux configured with direct C-h/j/k/l navigation."
+    print_success "Tmux configured (Splits restored: | and -)."
 }
 
 setup_neovim() {
@@ -149,18 +137,13 @@ setup_neovim() {
     cat > ~/.config/nvim/init.lua << 'EOF'
 vim.opt.termguicolors = true
 vim.env.PATH = vim.fn.expand("~/.local/bin") .. ":" .. vim.fn.expand("~/.cargo/bin") .. ":" .. vim.env.PATH
-
--- Options
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.cursorline = true
 vim.opt.shiftwidth = 4
-
--- Keybinds
 vim.g.mapleader = " "
 vim.keymap.set("n", "<leader>cd", vim.cmd.Ex)
 
--- Lazy.nvim bootstrap
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({"git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath})
@@ -191,9 +174,7 @@ main() {
     setup_starship
     setup_tmux
     setup_neovim
-    
-    print_success "Setup Complete!"
-    print_info "RESTART YOUR TERMINAL or run 'source ~/.zshrc' (or ~/.bashrc)"
+    print_success "Setup Complete! PLEASE RESTART YOUR TERMINAL."
 }
 
 main "$@"
