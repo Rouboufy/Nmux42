@@ -1,20 +1,35 @@
 /* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
+/*																			*/
+/*														:::	  ::::::::   */
 /*   test.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: blanglai </var/spool/mail/blanglai>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/26 16:41:52 by blanglai          #+#    #+#             */
-/*   Updated: 2026/05/26 16:45:19 by blanglai         ###   ########.fr       */
-/*                                                                            */
+/*													+:+ +:+		 +:+	 */
+/*   By: blanglai </var/spool/mail/blanglai>		+#+  +:+	   +#+		*/
+/*												+#+#+#+#+#+   +#+		   */
+/*   Created: 2026/05/26 17:03:49 by blanglai		  #+#	#+#			 */
+/*   Updated: 2026/05/26 19:45:35 by blanglai         ###   ########.fr       */
+/*																			*/
 /* ************************************************************************** */
 
 #include <stdio.h>
 
-int main()
+int	ft_strlen(char *str)
 {
-	int i = 0;
+	int	len;
 
-	printf("Hello");
+	len = 0;
+	while (*str)
+	{
+		len++;
+		str++;
+	}
+	return (len);
+}
+
+int	main(void)
+{
+	char	*str;
+
+	*str = "Hello";
+	ft_strlen(str);
+	printf("%s", str);
 }

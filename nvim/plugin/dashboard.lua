@@ -64,7 +64,11 @@ dashboard.section.buttons.val = {
                 on_exit = function(_, exit_code)
                     if exit_code == 0 then
                         vim.api.nvim_win_close(win, true)
-                        vim.notify("Nmux42 updated successfully!", vim.log.levels.INFO)
+                        vim.notify("Nmux42 updated successfully! Reloading configuration...", vim.log.levels.INFO)
+                        -- Reload the config to apply changes instantly
+                        pcall(vim.cmd, "source " .. vim.fn.stdpath("config") .. "/init.lua")
+                        -- Return to dashboard
+                        pcall(vim.cmd, "Alpha")
                     end
                 end
             })

@@ -32,4 +32,4 @@ print_info "Running setup script to sync configurations..."
 # We run setup.sh with the --update flag to skip redundant prompts
 bash setup.sh --update
 
-print_success "Update complete! Please restart Neovim to apply changes."
+# setup.sh now handles the success/reload messages based on the environment
