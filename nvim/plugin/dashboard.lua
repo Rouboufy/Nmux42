@@ -59,7 +59,14 @@ dashboard.section.buttons.val = {
                 row = row, col = col, border = 'rounded',
                 title = ' Nmux42 Update ', title_pos = 'center',
             })
-            vim.fn.termopen(update_script)
+            vim.fn.termopen(update_script, {
+                on_exit = function(_, exit_code)
+                    if exit_code == 0 then
+                        vim.api.nvim_win_close(win, true)
+                        vim.notify("Nmux42 updated successfully!", vim.log.levels.INFO)
+                    end
+                end
+            })
             vim.cmd("startinsert")
         else
             vim.notify("Update script not found at: " .. update_script, vim.log.levels.ERROR)
