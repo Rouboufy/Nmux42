@@ -2,7 +2,7 @@
 
 # ========================================
 # Ultimate Dev Setup Script (42 & Arch Optimized)
-# Version: 0.0.2
+# Version: 0.0.2-nightly
 # Author: Rouboufy
 # ========================================
 
