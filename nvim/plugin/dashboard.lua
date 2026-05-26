@@ -40,6 +40,7 @@ dashboard.section.buttons.val = {
     dashboard.button("g", "󰊢  Git (TUI)",            "<cmd>GitUI<cr>"),
     dashboard.button("J", "󰴓  Japonette Active",     "<cmd>JaponetteActive<cr>"),
     dashboard.button("O", "  Japonette Friends",    "<cmd>JaponetteFriends<cr>"),
+    dashboard.button("M", "󰹑  Cluster Map",          "<cmd>JaponetteCluster<cr>"),
     dashboard.button("v", "󰌌  Vim Bindings",         "<cmd>VimBindings<cr>"),
     dashboard.button("p", "󰏖  Plugins Manager",     "<cmd>HelpPlugins<cr>"),
     dashboard.button("u", "󰚰  Update Nmux42",        function()

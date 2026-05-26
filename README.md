@@ -116,12 +116,14 @@ Nmux42 detects your environment and adapts automatically — no manual tweaking 
 |-----|--------|
 | `<leader>Ja` | Open Japonette — Active Campus tab |
 | `<leader>Jf` | Open Japonette — Friends Watchlist tab |
+| `<leader>Jm` | Open Japonette — Cluster Map tab |
 | `Tab` | Toggle between tabs |
-| `1` / `2` | Switch to Campus / Friends tab directly |
+| `1` / `2` / `3` | Switch to Campus / Friends / Cluster tab directly |
 | `r` | Reload from 42 Intra API |
 | `a` / `d` | Add / remove friend from watchlist |
 | `Enter` / `o` | Inspect user details in popup |
 | `c` | Set default campus slug |
+| `C` | Show a specific cluster map by name |
 | `q` / `Esc` | Close Japonette window |
 
 ### Tmux
