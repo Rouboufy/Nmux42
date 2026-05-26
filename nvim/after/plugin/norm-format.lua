@@ -1,10 +1,10 @@
-vim.notify("Nmux42: Loading Norm-format config...", vim.log.levels.INFO)
+print("INIT_DEBUG: Loading Norm-format config")
 local status, nf = pcall(require, "norm-format")
 if status then
-    vim.notify("Nmux42: Norm-format loaded successfully", vim.log.levels.INFO)
+    print("INIT_DEBUG: Norm-format loaded")
     nf.setup({
         format_on_save = true
     })
 else
-    vim.notify("Nmux42: Failed to load Norm-format plugin: " .. tostring(nf), vim.log.levels.ERROR)
+    print("INIT_DEBUG: FAILED to load Norm-format plugin: " .. tostring(nf))
 end

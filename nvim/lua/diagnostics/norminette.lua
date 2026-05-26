@@ -15,24 +15,21 @@ function M.run()
 
     local cmd = "norminette"
     if vim.fn.executable(cmd) == 0 then
-        -- Try mise path specifically since 'which' found it there
         local mise_bin = vim.fn.expand("~/.local/share/mise/installs/python/3.14.5/bin/norminette")
         if vim.fn.executable(mise_bin) == 1 then
             cmd = mise_bin
         else
-            vim.notify("Norminette: binary NOT FOUND in PATH", vim.log.levels.ERROR)
             return
         end
     end
 
-    vim.notify("Norminette: Checking " .. vim.fn.fnamemodify(path, ":t"), vim.log.levels.INFO)
+    print("NORMINETTE_DEBUG: Running on " .. vim.fn.fnamemodify(path, ":t"))
 
     vim.fn.jobstart({ cmd, path }, {
         stdout_buffered = true,
         on_stdout = function(_, data)
             if not data then return end
             local diagnostics = {}
-            local error_count = 0
             for _, line in ipairs(data) do
                 local clean_line = strip_ansi(line)
                 local err_name, l, c, desc = clean_line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%s+col:%s+(%d+)%):%s+(.*)")
@@ -45,15 +42,10 @@ function M.run()
                         source = "norminette",
                         message = err_name .. ": " .. desc,
                     })
-                    error_count = error_count + 1
                 end
             end
             vim.diagnostic.set(ns, buf, diagnostics)
-            if error_count > 0 then
-                vim.notify("Norminette: Found " .. error_count .. " errors", vim.log.levels.WARN)
-            else
-                vim.notify("Norminette: OK!", vim.log.levels.INFO)
-            end
+            print("NORMINETTE_DEBUG: Found " .. #diagnostics .. " errors")
         end,
     })
 end
