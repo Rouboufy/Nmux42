@@ -451,6 +451,18 @@ alias ls="ls --color=auto"
 alias ll="ls -lah"
 alias gs="git status"
 
+# --- Nmux42 Launch Logic ---
+# Launch nvim inside a persistent tmux session named 'main'
+nmux() {
+    if [ -n "$TMUX" ]; then
+        nvim "$@"
+    else
+        tmux new-session -A -s main "nvim $@"
+    fi
+}
+# Override nvim to always launch inside tmux
+alias nvim="nmux"
+
 # --- Completion & History ---
 autoload -Uz compinit && compinit
 HISTFILE=~/.zsh_history
@@ -464,14 +476,6 @@ setopt SHARE_HISTORY
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
-# --- Auto-launch tmux ---
-# Automatically attach to (or create) a tmux session when opening a terminal.
-# Skips if: already inside tmux, or running inside an IDE/VSCode integrated terminal.
-if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ] && [ -z "$VSCODE_INJECTION" ] && [ -z "$INTELLIJ_ENVIRONMENT_READER" ]; then
-    # Attach to an existing session named 'main', or create it
-    tmux new-session -A -s main
-fi
 
 # --- Prompt ---
 PROMPT="%F{blue}%~%f %F{green}❯%f "
