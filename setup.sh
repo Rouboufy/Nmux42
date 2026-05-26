@@ -11,6 +11,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "0.0.1")
 
+# Parse arguments
+IS_UPDATE=false
+for arg in "$@"; do
+    if [ "$arg" = "--update" ]; then
+        IS_UPDATE=true
+    fi
+done
+
 # Cleanup temporary download files on script exit/failure
 trap 'rm -rf "$SCRIPT_DIR/nvim.appimage" "$SCRIPT_DIR/squashfs-root" 2>/dev/null || true' EXIT
 
@@ -296,39 +304,44 @@ ask_optional() {
     if command_exists lazygit; then
         print_success "lazygit is already installed (passing)."
     else
-        read -p "Install lazygit (full-screen TUI git client, used by <leader>gg in Neovim)? (y/N): " install_lg
-        if [[ "$install_lg" =~ ^[Yy]$ ]]; then
-            print_info "Installing lazygit (static binary, no sudo)..."
-            local LG_VERSION
-            LG_VERSION=$(curl -fsSL "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
-                | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
-            if [ -n "$LG_VERSION" ]; then
-                local LG_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_x86_64.tar.gz"
-                mkdir -p "$HOME/.local/bin"
-                curl -fsSL "$LG_URL" | tar -xz -C /tmp lazygit
-                mv /tmp/lazygit "$HOME/.local/bin/lazygit"
-                chmod +x "$HOME/.local/bin/lazygit"
-                print_success "lazygit v${LG_VERSION} installed to ~/.local/bin/lazygit."
-            else
-                print_warning "Could not determine latest lazygit version. Check: https://github.com/jesseduffield/lazygit/releases"
+        if [ "$IS_UPDATE" = true ]; then
+            print_info "Skipping lazygit installation (not found during update)."
+        else
+            read -p "Install lazygit (full-screen TUI git client, used by <leader>gg in Neovim)? (y/N): " install_lg
+            if [[ "$install_lg" =~ ^[Yy]$ ]]; then
+                print_info "Installing lazygit (static binary, no sudo)..."
+                local LG_VERSION
+                LG_VERSION=$(curl -fsSL "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
+                    | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
+                if [ -n "$LG_VERSION" ]; then
+                    local LG_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_x86_64.tar.gz"
+                    mkdir -p "$HOME/.local/bin"
+                    curl -fsSL "$LG_URL" | tar -xz -C /tmp lazygit
+                    mv /tmp/lazygit "$HOME/.local/bin/lazygit"
+                    chmod +x "$HOME/.local/bin/lazygit"
+                    print_success "lazygit v${LG_VERSION} installed to ~/.local/bin/lazygit."
+                else
+                    print_warning "Could not determine latest lazygit version. Check: https://github.com/jesseduffield/lazygit/releases"
+                fi
             fi
         fi
     fi
 
     # Zig check
-    local install_zig="n"
     if command_exists zig; then
         print_success "Zig is already installed (passing)."
     else
-        read -p "Install Zig? (y/N): " install_zig
-        if [[ "$install_zig" =~ ^[Yy]$ ]]; then
-            install_package zig
-
+        if [ "$IS_UPDATE" = true ]; then
+            print_info "Skipping Zig installation (not found during update)."
+        else
+            read -p "Install Zig? (y/N): " install_zig
+            if [[ "$install_zig" =~ ^[Yy]$ ]]; then
+                install_package zig
+            fi
         fi
     fi
 
     # Node stack check
-    local install_node="n"
     local has_node=false
     if command_exists node || command_exists nodejs; then
         has_node=true
@@ -337,58 +350,70 @@ ask_optional() {
             local cur_ver
             cur_ver=$(node --version 2>/dev/null || nodejs --version 2>/dev/null)
             print_warning "Node.js $cur_ver is installed but too old (japonette requires >= 14)."
-            read -p "Upgrade Node.js to LTS via nvm? (y/N): " upgrade_node
-            if [[ "$upgrade_node" =~ ^[Yy]$ ]]; then
+            if [ "$IS_UPDATE" = true ]; then
+                print_info "Updating Node.js to LTS via nvm automatically..."
                 ensure_modern_node
+            else
+                read -p "Upgrade Node.js to LTS via nvm? (y/N): " upgrade_node
+                if [[ "$upgrade_node" =~ ^[Yy]$ ]]; then
+                    ensure_modern_node
+                fi
             fi
         fi
+        
         if command_exists tsc; then
             print_success "Node.js stack (Node, TS) is ready."
         else
-            print_info "Node.js is installed, but TypeScript is missing."
-            read -p "Install TypeScript globally? (y/N): " install_ts
-            if [[ "$install_ts" =~ ^[Yy]$ ]]; then
+            if [ "$IS_UPDATE" = true ]; then
+                print_info "Skipping TypeScript installation (not found during update)."
+            else
+                print_info "Node.js is installed, but TypeScript is missing."
+                read -p "Install TypeScript globally? (y/N): " install_ts
+                if [[ "$install_ts" =~ ^[Yy]$ ]]; then
+                    setup_npm_prefix
+                    if command_exists npm; then
+                        print_info "Installing TypeScript globally..."
+                        npm install -g typescript
+                    fi
+                fi
+            fi
+        fi
+    else
+        if [ "$IS_UPDATE" = true ]; then
+            print_info "Skipping Node.js stack installation (not found during update)."
+        else
+            read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
+            if [[ "$install_node" =~ ^[Yy]$ ]]; then
+                ensure_modern_node
                 setup_npm_prefix
                 if command_exists npm; then
                     print_info "Installing TypeScript globally..."
                     npm install -g typescript
                 fi
+                has_node=true
             fi
-        fi
-    else
-        read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
-        if [[ "$install_node" =~ ^[Yy]$ ]]; then
-            # Use nvm for a guaranteed modern version (no sudo, works on 42 cluster)
-            ensure_modern_node
-            setup_npm_prefix
-            if command_exists npm; then
-                print_info "Installing TypeScript globally..."
-                npm install -g typescript
-            fi
-            has_node=true
         fi
     fi
 
     # japonette check
-    local install_japonette="n"
     if command_exists japonette; then
         print_success "japonette CLI is already installed (passing)."
     else
-        read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
-        if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
-            # Ensure we have a modern enough Node.js (>= 14 for japonette's ?? operator)
-            if ! is_node_version_ok; then
-                print_info "japonette requires Node.js >= 14. Installing via nvm..."
-                ensure_modern_node
-            elif [ "$has_node" = false ]; then
-                print_info "japonette requires Node.js. Installing via nvm..."
-                ensure_modern_node
-            fi
-            # Always configure local npm directory prefix + bypass SSL errors
-            setup_npm_prefix
-            if command_exists npm; then
-                print_info "Installing japonette CLI globally..."
-                npm install -g japonette
+        if [ "$IS_UPDATE" = true ]; then
+            print_info "Skipping japonette installation (not found during update)."
+        else
+            read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
+            if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
+                if ! is_node_version_ok; then
+                    ensure_modern_node
+                elif [ "$has_node" = false ]; then
+                    ensure_modern_node
+                fi
+                setup_npm_prefix
+                if command_exists npm; then
+                    print_info "Installing japonette CLI globally..."
+                    npm install -g japonette
+                fi
             fi
         fi
     fi
