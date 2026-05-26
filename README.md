@@ -15,7 +15,7 @@
 ![License](https://img.shields.io/badge/license-MIT-888888?style=flat-square)
 
 **A professional, high-performance development environment for 42 School, Arch Linux, and macOS.**
-One-command setup for Neovim, Tmux, and Zsh.
+One-command setup for Neovim, Tmux, Zsh, and Bash.
 
 </div>
 
@@ -59,7 +59,7 @@ Nmux42 detects your environment and adapts automatically — no manual tweaking 
 |------|-------------|
 | **Neovim** | Custom plugin manager, Neo-tree explorer, interactive dashboard, [Japonette TUI](https://github.com/sakemyali/japonette), live theme selector, LSP support |
 | **Tmux** | `Ctrl-a` prefix, pane navigation shortcuts, automatic color sync with the active Neovim colorscheme |
-| **Zsh** | Default shell with clean prompt, auto-attaches to a tmux session on every terminal open |
+| **Zsh / Bash** | Optimized configurations for both shells with clean prompts |
 | **JetBrainsMono Nerd Font** | Auto-installed to `~/.local/share/fonts/` (no sudo) — required for icons |
 
 ### Compilers & Runtimes
@@ -159,7 +159,7 @@ bash uninstall.sh
 bash uninstall.sh --disable-tmux
 ```
 
-> A backup is created at `~/.zshrc.pre-tmux-disable` before any `.zshrc` modifications.
+> A backup is created (e.g., `~/.zshrc.pre-tmux-disable`) before any shell configuration modifications.
 > During a full uninstall, the script prompts before removing NVM or Homebrew.
 
 ---
@@ -174,14 +174,15 @@ bash uninstall.sh --disable-tmux
 
 ---
 
-## 📂 Generated `.zshrc` structure
+## 📂 Generated Shell Configurations
 
-The setup script produces a clean, organized `.zshrc`:
+The setup script produces clean, organized `.zshrc` and `.bashrc` files:
 
 | Section | Contents |
 |---------|----------|
 | **Environment** | PATH exports for local NPM, Go binaries, Cargo, Homebrew |
-| **Homebrew** | Auto-detection and loading for Linuxbrew |
+| **Homebrew** | Auto-detection and loading for Homebrew/Linuxbrew |
 | **Auto-Tmux** | Logic to attach to or create a session on startup |
 | **Aliases** | `v` → `nvim` · `ll` → long list · `gs` → `git status` |
 | **Prompt** | Fast, clean shell prompt |
+

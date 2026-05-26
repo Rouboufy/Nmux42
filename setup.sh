@@ -443,6 +443,11 @@ elif [ -x "/opt/homebrew/bin/brew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# --- Auto-launch tmux ---
+if [ -z "$TMUX" ]; then
+    tmux new-session -A -s main
+fi
+
 # --- Aliases ---
 alias v="nvim"
 alias vi="nvim"
@@ -481,6 +486,73 @@ export NVM_DIR="$HOME/.nvm"
 PROMPT="%F{blue}%~%f %F{green}❯%f "
 EOF
     print_success ".zshrc organized (Previous config backed up to .zshrc.bak)."
+}
+
+setup_organized_bashrc() {
+    print_info "Generating organized .bashrc..."
+    BASHRC="$HOME/.bashrc"
+    
+    # Backup existing
+    if [ -f "$BASHRC" ]; then
+        cp "$BASHRC" "${BASHRC}.bak"
+    fi
+
+    cat > "$BASHRC" << 'EOF'
+# ========================================
+# Organized BASH Configuration
+# ========================================
+
+# --- PATH & Environment ---
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
+
+# --- Homebrew ---
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [ -x "/opt/homebrew/bin/brew" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# --- Auto-launch tmux ---
+if [ -z "$TMUX" ]; then
+    tmux new-session -A -s main
+fi
+
+# --- Aliases ---
+alias v="nvim"
+alias vi="nvim"
+alias nvimconfig="cd ~/.config/nvim && v init.lua"
+alias ls="ls --color=auto"
+alias ll="ls -lah"
+alias gs="git status"
+
+# --- Nmux42 Launch Logic ---
+# Launch nvim inside a persistent tmux session named 'main'
+nmux() {
+    if [ -n "$TMUX" ]; then
+        nvim "$@"
+    else
+        tmux new-session -A -s main "nvim $@"
+    fi
+}
+# Override nvim to always launch inside tmux
+alias nvim="nmux"
+
+# --- Completion & History ---
+HISTFILE=~/.bash_history
+HISTSIZE=10000
+HISTFILESIZE=10000
+shopt -s histappend
+
+# --- nvm (Node Version Manager) ---
+# Loads nvm and makes the nvm-managed Node.js available in every shell
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+
+# --- Prompt ---
+PS1='\[\033[0;34m\]\w\[\033[0m\] \[\033[0;32m\]❯\[\033[0m\] '
+EOF
+    print_success ".bashrc organized (Previous config backed up to .bashrc.bak)."
 }
 
 setup_tmux() {
@@ -607,6 +679,7 @@ main() {
     
     # Configurations
     setup_organized_zshrc
+    setup_organized_bashrc
     setup_tmux
     setup_neovim
     install_nerd_font
