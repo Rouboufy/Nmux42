@@ -157,11 +157,11 @@ local function render()
     if state.active_tab == "friends" then
         cmd_args = "friends online"
     elseif state.active_tab == "cluster" then
-        if state.cluster_name then
+        if state.cluster_user then
+            cmd_args = "cluster --user " .. state.cluster_user
+            state.cluster_user = nil -- Show once then revert to default or current name
+        elseif state.cluster_name then
             cmd_args = "cluster --name " .. state.cluster_name
-            state.cluster_name = nil -- Reset after one use or keep it?
-            -- Actually, let's keep it until tab is switched or reloaded?
-            -- For now, let's just use it once to show that cluster.
         else
             cmd_args = "cluster"
         end
@@ -316,6 +316,25 @@ local function set_keymaps(buf)
             inspect_user(login)
         end
     end, "Inspect User")
+
+    map("m", function()
+        local login = get_login_under_cursor()
+        if login then
+            state.active_tab = "cluster"
+            state.cluster_user = login
+            render()
+        end
+    end, "View Location on Map")
+
+    map("L", function()
+        vim.ui.input({ prompt = "Find user location (login): " }, function(input)
+            if input and input ~= "" then
+                state.active_tab = "cluster"
+                state.cluster_user = input
+                render()
+            end
+        end)
+    end, "Search User Location")
     
     map("c", function()
         vim.ui.input({ prompt = "Set Default Campus (slug): " }, function(input)
@@ -352,6 +371,8 @@ local function set_keymaps(buf)
             " a     : Add a 42 login to your local friends watchlist",
             " d     : Remove the friend under the cursor from watchlist",
             " o/Ent : Inspect details of the user under the cursor",
+            " m     : View the location of the user under the cursor",
+            " L     : Search for a specific user's location",
             " c     : Change your default campus",
             " C     : Show a specific cluster map by name",
             " q/Esc : Close this TUI window",

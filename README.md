@@ -122,6 +122,8 @@ Nmux42 detects your environment and adapts automatically — no manual tweaking 
 | `r` | Reload from 42 Intra API |
 | `a` / `d` | Add / remove friend from watchlist |
 | `Enter` / `o` | Inspect user details in popup |
+| `m` | View user location on Cluster Map |
+| `L` | Search for a specific user's location |
 | `c` | Set default campus slug |
 | `C` | Show a specific cluster map by name |
 | `q` / `Esc` | Close Japonette window |
