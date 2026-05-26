@@ -12,7 +12,7 @@ parser_config.goon = {
 }
 
 -- Configure nvim-treesitter with ensure_installed
-require("nvim-treesitter.configs").setup({
+require("nvim-treesitter.config").setup({
     ensure_installed = {
         "json", "python", "ron", "javascript", "haskell", "d", "query",
         "typescript", "tsx", "rust", "zig", "php", "yaml", "html", "css",

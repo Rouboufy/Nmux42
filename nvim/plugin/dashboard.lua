@@ -5,20 +5,32 @@ end
 
 local dashboard = require("alpha.themes.dashboard")
 
-dashboard.section.header.val = {
+local logo = {
     [[  _   _                            _  _    ____   ]],
     [[ | \ | | _ __ ___   _   _ __  __  | || |  |___ \  ]],
     [[ |  \| || '_ ` _ \ | | | |\ \/ /  | || |_   __) | ]],
     [[ | |\  || | | | | || |_| | >  <   |__   _| / __/  ]],
     [[ |_| \_||_| |_| |_| \__,_|/_/\_\     |_|  |_____| ]],
 }
-dashboard.section.header.opts.hl = {
+local colors = {
     "DiagnosticError",
     "DiagnosticWarning",
     "DiagnosticInfo",
     "DiagnosticHint",
     "Type",
 }
+
+local header_elements = {}
+for i, line in ipairs(logo) do
+    table.insert(header_elements, {
+        type = "text",
+        val = line,
+        opts = {
+            position = "center",
+            hl = colors[i],
+        }
+    })
+end
 
 dashboard.section.buttons.val = {
     dashboard.button("n", "  New File", "<cmd>enew<cr>"),
@@ -33,8 +45,21 @@ dashboard.section.buttons.val = {
     dashboard.button("q", "  Quit", "<cmd>qa<cr>"),
 }
 
--- Add footer with a welcoming message
 dashboard.section.footer.val = "Welcome to Nmux42 development environment!"
 dashboard.section.footer.opts.hl = "Comment"
 
-alpha.setup(dashboard.opts)
+-- Override layout to use line-by-line colorful logo elements
+dashboard.config.layout = {
+    { type = "padding", val = 2 },
+    header_elements[1],
+    header_elements[2],
+    header_elements[3],
+    header_elements[4],
+    header_elements[5],
+    { type = "padding", val = 2 },
+    dashboard.section.buttons,
+    { type = "padding", val = 1 },
+    dashboard.section.footer,
+}
+
+alpha.setup(dashboard.config)
