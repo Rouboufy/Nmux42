@@ -3,6 +3,7 @@ require("config.keybinds")
 require("manage").setup()
 
 -- Custom 42 Diagnostics
+vim.notify("Nmux42: Initializing custom diagnostics...", vim.log.levels.INFO)
 pcall(function() require("diagnostics.norminette").setup() end)
 
 -- Load active colorscheme dynamically

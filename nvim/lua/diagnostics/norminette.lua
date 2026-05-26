@@ -56,6 +56,7 @@ function M.run()
 end
 
 function M.setup()
+    vim.notify("Nmux42: Setting up Norminette diagnostics...", vim.log.levels.INFO)
     local group = vim.api.nvim_create_augroup("NorminetteLSP", { clear = true })
     
     -- Run on enter and save
