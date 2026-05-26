@@ -1,4 +1,4 @@
-```text
+```
   _   _                            _  _    ____   
  | \ | | _ __ ___   _   _ __  __  | || |  |___ \  
  |  \| || '_ ` _ \ | | | |\ \/ /  | || |_   __) | 
@@ -6,13 +6,22 @@
  |_| \_||_| |_| |_| \__,_|/_/\_\     |_|  |_____| 
 ```
 
-# Nmux42 `v0.0.1`
+<div align="center">
 
-A professional, high-performance development environment for **42 School**, **Arch Linux**, and **macOS**. This repository provides a "one-command" setup for Neovim, Tmux, Zsh, and essential compilers.
+![Version](https://img.shields.io/badge/version-v0.0.1-7c6af5?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-42%20School-5ddbb8?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Arch%20Linux-1793d1?style=flat-square&logo=arch-linux&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-macOS-f5876a?style=flat-square&logo=apple&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-888888?style=flat-square)
 
-## 🚀 One-Command Installation
+**A professional, high-performance development environment for 42 School, Arch Linux, and macOS.**
+One-command setup for Neovim, Tmux, and Zsh.
 
-Clone and run the smart setup script:
+</div>
+
+---
+
+## 🚀 Quick Start
 
 ```bash
 git clone https://github.com/Rouboufy/Nmux42.git
@@ -20,144 +29,155 @@ cd Nmux42
 bash setup.sh
 ```
 
-## 🔄 Update
+| Action | Command |
+|--------|---------|
+| **Install** | `bash setup.sh` |
+| **Update** | `bash update.sh` or press `u` on the Neovim dashboard |
+| **Uninstall** | `bash uninstall.sh` |
+| **Disable Tmux only** | `bash uninstall.sh --disable-tmux` |
 
-You can update Nmux42 directly from the Neovim dashboard by pressing **`u`**, or manually by running:
+---
 
-```bash
-bash update.sh
-```
+## ✨ Smart Features
 
-## 🗑️ Uninstallation & Configuration
+Nmux42 detects your environment and adapts automatically — no manual tweaking needed.
 
-Nmux42 includes a versatile uninstaller that can either revert everything or just tweak specific behaviors.
+- **Arch Linux native** — detects Arch and uses `pacman` with `sudo` for high-performance native binaries
+- **100% Sudo-free** — bypasses root requirements for Homebrew and NPM installs, works on 42 clusters
+- **SSL proxy fix** — automatically applies `strict-ssl false` for the 42 network proxy
+- **Node auto-upgrade** — upgrades Node.js to LTS via `nvm` if the system version is too old
+- **Auto PATH management** — handles `~/.local/bin`, `~/.cargo/bin`, and Homebrew paths automatically
+- **Cleanup routine** — removes temp files and build caches (NPM/Brew) after install to save disk space
 
-### Options:
+---
 
-1.  **Full Uninstall**: Reverts all changes, removes `~/.config/nvim`, `~/.config/tmux`, and attempts to restore your original `.zshrc` from the backup created during installation.
-2.  **Disable Tmux Auto-launch**: Removes only the logic that automatically starts tmux when you open a terminal, keeping all other configurations and plugins intact.
+## 📦 What's Included
 
-### Commands:
+### Core Applications
 
-**Interactive Menu:**
+| Tool | Description |
+|------|-------------|
+| **Neovim** | Custom plugin manager, Neo-tree explorer, interactive dashboard, Japonette TUI, live theme selector, LSP support |
+| **Tmux** | `Ctrl-a` prefix, pane navigation shortcuts, automatic color sync with the active Neovim colorscheme |
+| **Zsh** | Default shell with clean prompt, auto-attaches to a tmux session on every terminal open |
+| **JetBrainsMono Nerd Font** | Auto-installed to `~/.local/share/fonts/` (no sudo) — required for icons |
+
+### Compilers & Runtimes
+
+**Always installed:**
+`gcc` · `clang` · `python3` · `go` · `ripgrep` · `fd-find` · `pyright`
+
+**Optional** *(prompted during setup):*
+`zig` · `node.js` · `typescript` · `javascript` · `japonette`
+
+---
+
+## ⌨️ Keybindings
+
+> Leader key is `Space`.
+
+### General
+
+| Shortcut | Action |
+|----------|--------|
+| `<leader>e` | Toggle file explorer (Neo-tree) |
+| `<leader>ff` | Find files (Telescope) |
+| `<leader>fg` | Live grep (Telescope) |
+| `<leader>a` | Add file to Harpoon |
+| `Ctrl+e` | Toggle Harpoon menu |
+| `<leader>th` | Select colorscheme — live preview + Tmux sync |
+| `<leader>db` | Return to welcome dashboard |
+| `<leader>ft` | Toggle floating terminal (Flterm) |
+| `<leader>hk` | Custom keybinds quick-help popup |
+| `<leader>hp` | Plugin manager / list popup |
+| `<leader>vb` / `<leader>?` | Vim bindings reference |
+
+### Git
+
+| Shortcut | Action |
+|----------|--------|
+| `<leader>gg` | Open Git TUI (LazyGit with smart fallback) |
+| `<leader>gl` | Open Git log |
+| `<leader>gd` | Open Git diff |
+| `<leader>gf` | LazyGit file log / filter |
+| `<leader>gc` | LazyGit current file history |
+| `<leader>gs` | Stage hunk under cursor |
+| `<leader>gr` | Reset hunk under cursor |
+| `<leader>gS` | Stage entire buffer |
+| `<leader>gu` | Undo last staged hunk |
+| `<leader>gp` | Preview hunk inline |
+| `<leader>gb` | Toggle inline git blame |
+| `]h` / `[h` | Jump to next / previous hunk |
+| `ih` | Text object: select hunk (operator/visual mode) |
+
+### Japonette TUI
+
+| Key | Action |
+|-----|--------|
+| `<leader>Ja` | Open Japonette — Active Campus tab |
+| `<leader>Jf` | Open Japonette — Friends Watchlist tab |
+| `Tab` | Toggle between tabs |
+| `1` / `2` | Switch to Campus / Friends tab directly |
+| `r` | Reload from 42 Intra API |
+| `a` / `d` | Add / remove friend from watchlist |
+| `Enter` / `o` | Inspect user details in popup |
+| `c` | Set default campus slug |
+| `q` / `Esc` | Close Japonette window |
+
+### Tmux
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+a` | Prefix key (replaces default `Ctrl+b`) |
+| `Ctrl+a` `\|` | Split pane vertically |
+| `Ctrl+a` `-` | Split pane horizontally |
+| `Alt+h/j/k/l` | Navigate panes — no prefix needed |
+
+---
+
+## 🎨 Themes
+
+Press `<Space>th` to open the live theme selector. Selecting a theme automatically updates Tmux colors to match.
+
+`Catppuccin` · `TokyoNight` · `Cyberdream` · `Rose Pine` · `Gruvbox` · `Nord` · `Kanagawa` · `Nightfox` · `Matte Black` · `Aether`
+
+---
+
+## 🗑️ Uninstall
+
+**Interactive menu** — prompts you to choose between full removal or disabling Tmux only:
 ```bash
 bash uninstall.sh
 ```
-*Follow the prompts to choose between a full uninstall or disabling tmux.*
 
-**Quick Disable (Tmux Only):**
+**Disable Tmux auto-launch only** — keeps all plugins and configs intact:
 ```bash
 bash uninstall.sh --disable-tmux
 ```
 
-### 🛡️ Safety
-- Before modifying your `.zshrc` to disable tmux, a backup is automatically created at `~/.zshrc.pre-tmux-disable`.
-- During a full uninstall, the script will prompt you before removing larger components like NVM or Homebrew.
+> A backup is created at `~/.zshrc.pre-tmux-disable` before any `.zshrc` modifications.
+> During a full uninstall, the script prompts before removing NVM or Homebrew.
 
-## ✨ "Smart" Features
-
-- **Arch Linux Native**: Automatically detects Arch and uses `pacman` with `sudo` for high-performance native binaries.
-- **42 School & Cluster Optimized**: 
-    - **100% Sudo-free**: Bypasses root requirements for Homebrew and NPM global installs.
-    - **SSL Fix**: Automatically bypasses certificate errors on the 42 network proxy (`strict-ssl false`).
-    - **Node Management**: Automatically upgrades Node.js to LTS via `nvm` if the system version is too old for modern tools.
-- **Auto-Configured Shell**: Generates a clean, organized `.zshrc` with auto-loading for Homebrew, aliases, and custom prompt.
-- **Automated PATH Management**: Handles `~/.local/bin`, `~/.cargo/bin`, and Homebrew paths automatically.
-- **Cleanup Routine**: The installer automatically cleans up temporary download files and build caches (NPM/Brew) to save space.
-
-## 📦 What's Included?
-
-### Core Applications
-- **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, colorful interactive welcome dashboard, [Japonette TUI](https://github.com/sakemyali/japonette) integration, interactive theme selector, and LSP settings.
-- **Tmux**: Power-user configuration with `Ctrl-a` prefix, pane navigation shortcuts, and **automatic color sync with the active Neovim colorscheme**.
-- **Zsh**: Automatically configured as the default shell with a clean prompt. **Auto-attaches to a tmux session** on every terminal open.
-- **JetBrainsMono Nerd Font**: Automatically downloaded and installed to `~/.local/share/fonts` (no sudo). Required for icons in Neo-tree, lualine, and the dashboard.
-
-### Compilers & Runtimes (Auto-Installed)
-- **C/C++**: `gcc`, `clang`, `ripgrep`, `fd-find` (essential for fast fuzzy finding).
-- **Python**: `python3` (with `pyright` LSP).
-- **Go**: `go`.
-- **Optional**: `Zig`, `Node.js`, `TypeScript`, `JavaScript`, `Japonette` (via interactive prompts).
-
-## ⌨️ Keybindings
-
-### 🔭 Neovim (Leader is Space)
-
-#### General Keybinds
-| Shortcut | Action |
-|----------|--------|
-| `<leader>e` | **Toggle File Explorer** (Neo-tree) |
-| `<leader>ff` | Find Files (Telescope) |
-| `<leader>fg` | Live Grep (Telescope) |
-| `<leader>a` | Add file to Harpoon |
-| `Ctrl + e` | Toggle Harpoon Menu |
-| `<leader>Ja` | **Open Japonette TUI** (Active Campus tab) |
-| `<leader>Jf` | **Open Japonette TUI** (Friends Watchlist tab) |
-| `<leader>th` | **Select Colorscheme TUI** (live preview + tmux sync) |
-| `<leader>vb` / `<leader>?` | **Vim Bindings Reference** (motions + custom keys) |
-| `<leader>hk` | Custom Nmux42 keybinds quick-help popup |
-| `<leader>hp` | Plugins manager / list popup |
-| `<leader>db` | **Return to welcome dashboard** |
-| `<leader>ft` | Toggle floating terminal (Flterm) |
-
-#### 🌿 Git Keybinds (Unified TUI + Gitsigns)
-| Shortcut | Action |
-|----------|--------|
-| `<leader>gg` | **Open Git TUI** (LazyGit with smart fallback) |
-| `<leader>gl` | Open Git Log (Custom TUI) |
-| `<leader>gd` | Open Git Diff (Custom TUI) |
-| `<leader>gf` | LazyGit file log / filter |
-| `<leader>gc` | LazyGit current file history |
-| `<leader>gs` | Gitsigns: stage hunk under cursor |
-| `<leader>gr` | Gitsigns: reset hunk under cursor |
-| `<leader>gS` | Gitsigns: stage entire buffer |
-| `<leader>gu` | Gitsigns: undo last staged hunk |
-| `<leader>gp` | Preview hunk inline |
-| `<leader>gb` | Toggle inline git blame |
-| `]h` / `[h` | Jump to next / previous git hunk |
-| `ih` | Text object: select hunk (in operator/visual mode) |
-
-#### Japonette TUI Buffer Controls
-| Key | Action |
-|-----|--------|
-| `<Tab>` | Toggle between Active Campus and Friends List tabs |
-| `1` | Switch to Active Campus tab |
-| `2` | Switch to Friends List tab |
-| `r` | Reload/Refresh the list from 42 Intra API |
-| `a` | Add a 42 login to watchlist |
-| `d` | Remove the friend under the cursor from watchlist |
-| `Enter` / `o` | Inspect details of user under cursor in a rounded popup |
-| `c` | Change/Set default campus slug |
-| `h` | Show help cheatsheet |
-| `q` / `<Esc>` | Close the Japonette TUI window |
-
-
-### 🖥️ Tmux & Navigation
-| Shortcut | Action |
-|----------|--------|
-| **`Ctrl + a`** | **Prefix Key** (instead of Ctrl-b) |
-| `Ctrl + a` followed by `|` | Split Vertical |
-| `Ctrl + a` followed by `-` | Split Horizontal |
-| **`Alt + h/j/k/l`** | **Direct Navigation** between Tmux panes (No prefix needed!) |
-
-## 🎨 Theme Selection & Sync
-Nmux42 comes with preinstalled premium themes: **Catppuccin, TokyoNight, Cyberdream, Rose Pine, Gruvbox, Nord, Kanagawa, Nightfox, Matte Black, and Aether**.
-
-1. Press `<Space>th` inside Neovim.
-2. Scroll through the themes on the left; the code preview on the right updates in real-time.
-3. Press **Enter** to save. **Tmux colors will automatically update to match!**
+---
 
 ## 🛠️ Post-Installation
+
 1. **Restart your terminal** after running `setup.sh`.
 2. Your terminal will **automatically open inside a tmux session** (`main`) on every launch.
-3. Open Neovim (`nvim`) and wait for the custom plugin manager to download/clone the plugins automatically on first boot.
-4. **Set your terminal emulator font** to `JetBrainsMono Nerd Font` (or `JetBrainsMono NF`) for all icons to render correctly. The font is already installed to `~/.local/share/fonts/` by the setup script.
-5. Run `:Mason` to manage additional LSPs and formatters.
+3. Open Neovim (`nvim`) — the plugin manager will **download all plugins automatically** on first boot.
+4. Set your terminal emulator font to **JetBrainsMono Nerd Font** (or `JetBrainsMono NF`). Already installed at `~/.local/share/fonts/`.
+5. Run `:Mason` inside Neovim to manage additional LSPs and formatters.
 
-## 📂 Organized .zshrc
-The script generates a structured `.zshrc` including:
-- **Environment**: Proper PATH exports for all your tools, including local NPM and Go binaries.
-- **Homebrew**: Auto-detection and loading for Linuxbrew.
-- **Auto-Tmux**: Logic to attach to or create a session on startup.
-- **Aliases**: `v` (nvim), `ll` (long list), `gs` (git status).
-- **Prompt**: A fast, clean shell prompt initialized at the end.
+---
+
+## 📂 Generated `.zshrc` structure
+
+The setup script produces a clean, organized `.zshrc`:
+
+| Section | Contents |
+|---------|----------|
+| **Environment** | PATH exports for local NPM, Go binaries, Cargo, Homebrew |
+| **Homebrew** | Auto-detection and loading for Linuxbrew |
+| **Auto-Tmux** | Logic to attach to or create a session on startup |
+| **Aliases** | `v` → `nvim` · `ll` → long list · `gs` → `git status` |
+| **Prompt** | Fast, clean shell prompt |

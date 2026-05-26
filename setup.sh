@@ -611,19 +611,23 @@ main() {
     if command_exists zsh; then
         ZSH_PATH="$(command -v zsh)"
         if [ "$SHELL" != "$ZSH_PATH" ]; then
-            print_info "Your current shell is not zsh ($SHELL)."
-            read -p "Would you like to change your default shell to zsh? (y/N): " change_shell
-            if [[ "$change_shell" =~ ^[Yy]$ ]]; then
-                print_info "Changing default shell to zsh..."
-                if chsh -s "$ZSH_PATH"; then
-                    print_success "Shell changed to zsh successfully."
-                else
-                    print_warning "Failed to change shell using chsh."
-                    print_info "You can manually set it by running: chsh -s $ZSH_PATH"
-                    print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
-                fi
+            if [ "$IS_UPDATE" = true ]; then
+                print_info "Your current shell is not zsh ($SHELL), but skipping shell change prompt during update."
             else
-                print_info "Skipping shell change. You can manually run: chsh -s $ZSH_PATH"
+                print_info "Your current shell is not zsh ($SHELL)."
+                read -p "Would you like to change your default shell to zsh? (y/N): " change_shell
+                if [[ "$change_shell" =~ ^[Yy]$ ]]; then
+                    print_info "Changing default shell to zsh..."
+                    if chsh -s "$ZSH_PATH"; then
+                        print_success "Shell changed to zsh successfully."
+                    else
+                        print_warning "Failed to change shell using chsh."
+                        print_info "You can manually set it by running: chsh -s $ZSH_PATH"
+                        print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
+                    fi
+                else
+                    print_info "Skipping shell change. You can manually run: chsh -s $ZSH_PATH"
+                fi
             fi
         fi
     fi
