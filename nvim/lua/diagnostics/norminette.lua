@@ -2,6 +2,10 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("norminette")
 
+local function strip_ansi(str)
+    return str:gsub("\27%[[0-9;]*[mK]", "")
+end
+
 function M.run()
     local buf = vim.api.nvim_get_current_buf()
     if vim.bo[buf].filetype ~= "c" then return end
@@ -15,12 +19,9 @@ function M.run()
             if not data then return end
             local diagnostics = {}
             for _, line in ipairs(data) do
-                -- Debug: print line to see output format
-                -- print("Norminette: " .. line)
-                
-                -- Flexible pattern to catch both standard and legacy norminette output
+                local clean_line = strip_ansi(line)
                 -- Pattern: Error: NAME (line: X, col: Y): Description
-                local err_name, l, c, desc = line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%s+col:%s+(%d+)%):%s+(.*)")
+                local err_name, l, c, desc = clean_line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%s+col:%s+(%d+)%):%s+(.*)")
                 
                 if err_name and l and c then
                     table.insert(diagnostics, {
