@@ -69,7 +69,9 @@ dashboard.section.buttons.val = {
     dashboard.button("q", "  Quit",                 "<cmd>qa<cr>"),
 }
 
-dashboard.section.footer.val = "Welcome to Nmux42 development environment!"
+local repo_info_ok, repo_info = pcall(require, "config.repo_info")
+local version = repo_info_ok and repo_info.version or "0.0.1"
+dashboard.section.footer.val = "Nmux42 v" .. version .. " — Welcome to your development environment!"
 dashboard.section.footer.opts.hl = "Comment"
 
 -- Override layout to use line-by-line colorful logo elements

@@ -6,7 +6,7 @@
  |_| \_||_| |_| |_| \__,_|/_/\_\     |_|  |_____| 
 ```
 
-# Nmux42
+# Nmux42 `v0.0.1`
 
 A professional, high-performance development environment for **42 School**, **Arch Linux**, and **macOS**. This repository provides a "one-command" setup for Neovim, Tmux, Zsh, and essential compilers.
 

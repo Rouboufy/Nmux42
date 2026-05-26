@@ -2,12 +2,14 @@
 
 # ========================================
 # Ultimate Dev Setup Script (42 & Arch Optimized)
+# Version: 0.0.1
 # Author: Rouboufy
 # ========================================
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "0.0.1")
 
 # Cleanup temporary download files on script exit/failure
 trap 'rm -rf "$SCRIPT_DIR/nvim.appimage" "$SCRIPT_DIR/squashfs-root" 2>/dev/null || true' EXIT
@@ -477,7 +479,7 @@ setup_neovim() {
     
     # Record the repository path for the Update feature
     mkdir -p "$HOME/.config/nvim/lua/config"
-    echo "return { path = \"$SCRIPT_DIR\" }" > "$HOME/.config/nvim/lua/config/repo_info.lua"
+    echo "return { path = \"$SCRIPT_DIR\", version = \"$VERSION\" }" > "$HOME/.config/nvim/lua/config/repo_info.lua"
     
     print_success "Neovim configured."
 }
@@ -538,7 +540,7 @@ cleanup_installation_temp() {
 }
 
 main() {
-    print_info "Starting Comprehensive Setup..."
+    print_info "Starting Comprehensive Setup (Nmux42 v$VERSION)..."
     
     # Ensure scripts are executable
     chmod +x "$SCRIPT_DIR/update.sh" 2>/dev/null || true
