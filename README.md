@@ -57,7 +57,7 @@ Nmux42 detects your environment and adapts automatically — no manual tweaking 
 
 | Tool | Description |
 |------|-------------|
-| **Neovim** | Custom plugin manager, Neo-tree explorer, interactive dashboard, Japonette TUI, live theme selector, LSP support |
+| **Neovim** | Custom plugin manager, Neo-tree explorer, interactive dashboard, [Japonette TUI](https://github.com/sakemyali/japonette), live theme selector, LSP support |
 | **Tmux** | `Ctrl-a` prefix, pane navigation shortcuts, automatic color sync with the active Neovim colorscheme |
 | **Zsh** | Default shell with clean prompt, auto-attaches to a tmux session on every terminal open |
 | **JetBrainsMono Nerd Font** | Auto-installed to `~/.local/share/fonts/` (no sudo) — required for icons |
