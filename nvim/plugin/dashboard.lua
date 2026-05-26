@@ -95,28 +95,27 @@ dashboard.section.buttons.val = {
                             
                             vim.keymap.set('n', 'y', function()
                                 close_confirm()
-                                vim.notify("Nmux42: Performing hard reload...", vim.log.levels.INFO)
                                 
-                                -- 1. WIPE EVERYTHING FIRST (ensure no stale buffers)
-                                vim.cmd("silent! bufdo! bwipeout")
-
-                                -- 2. Clear Nmux42 related packages from cache
-                                for name, _ in pairs(package.loaded) do
-                                    if name:match("^config%.") or name:match("^manage$") or 
-                                       name:match("^plugins%.") or name:match("^diagnostics%.") or
-                                       name:match("^norm%-format$") then
-                                        package.loaded[name] = nil
+                                local tmux_pane = os.getenv("TMUX_PANE")
+                                if tmux_pane then
+                                    vim.notify("Nmux42: Restarting via Tmux...", vim.log.levels.INFO)
+                                    -- Respawn the current pane with a fresh nvim process
+                                    -- -k kills the current process immediately
+                                    vim.fn.jobstart("tmux respawn-pane -k -c " .. vim.fn.shellescape(vim.fn.getcwd()) .. " nvim")
+                                else
+                                    -- Fallback for non-tmux environments
+                                    vim.notify("Nmux42: Performing soft reload...", vim.log.levels.INFO)
+                                    vim.cmd("silent! bufdo! bwipeout")
+                                    for name, _ in pairs(package.loaded) do
+                                        if name:match("^config%.") or name:match("^manage$") or 
+                                           name:match("^plugins%.") or name:match("^diagnostics%.") or
+                                           name:match("^norm%-format$") then
+                                            package.loaded[name] = nil
+                                        end
                                     end
+                                    dofile(vim.fn.stdpath("config") .. "/init.lua")
+                                    vim.cmd("Alpha")
                                 end
-                                
-                                -- 3. Re-execute init.lua
-                                local init_path = vim.fn.stdpath("config") .. "/init.lua"
-                                if vim.fn.filereadable(init_path) == 1 then
-                                    dofile(init_path)
-                                end
-                                
-                                -- 4. Re-launch dashboard
-                                vim.cmd("Alpha")
                             end, { buffer = confirm_buf, silent = true })
                             
                             vim.keymap.set('n', 'n', function()
