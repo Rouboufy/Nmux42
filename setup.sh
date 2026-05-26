@@ -9,6 +9,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Cleanup temporary download files on script exit/failure
+trap 'rm -rf "$SCRIPT_DIR/nvim.appimage" "$SCRIPT_DIR/squashfs-root" 2>/dev/null || true' EXIT
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -234,35 +237,72 @@ install_package() {
 # Ask User for Extras
 ask_optional() {
     print_info "--- Optional Packages ---"
-    read -p "Install Zig? (y/N): " install_zig
-    read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
-    read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
-
-    if [[ "$install_zig" =~ ^[Yy]$ ]]; then
-        install_package zig
+    
+    # Zig check
+    local install_zig="n"
+    if command_exists zig; then
+        print_success "Zig is already installed (passing)."
+    else
+        read -p "Install Zig? (y/N): " install_zig
+        if [[ "$install_zig" =~ ^[Yy]$ ]]; then
+            install_package zig
+        fi
     fi
 
-    # japonette requires Node.js, so if japonette is requested, ensure node is installed
-    if [[ "$install_node" =~ ^[Yy]$ ]] || [[ "$install_japonette" =~ ^[Yy]$ ]]; then
-        if [ "$IS_ARCH" = true ]; then
-            install_package nodejs
-            install_package npm
+    # Node stack check
+    local install_node="n"
+    local has_node=false
+    if command_exists node || command_exists nodejs; then
+        has_node=true
+        if command_exists tsc; then
+            print_success "Node.js stack (Node, TS) is already installed (passing)."
         else
-            install_package node
+            print_info "Node.js is installed, but TypeScript is missing."
+            read -p "Install TypeScript globally? (y/N): " install_ts
+            if [[ "$install_ts" =~ ^[Yy]$ ]]; then
+                setup_npm_prefix
+                if command_exists npm; then
+                    print_info "Installing TypeScript globally..."
+                    npm install -g typescript
+                fi
+            fi
         fi
-        
-        # Configure npm prefix for user-space installation (no sudo required)
-        setup_npm_prefix
-        
-        # Install global TS if they wanted Node stack
+    else
+        read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
         if [[ "$install_node" =~ ^[Yy]$ ]]; then
+            if [ "$IS_ARCH" = true ]; then
+                install_package nodejs
+                install_package npm
+            else
+                install_package node
+            fi
+            setup_npm_prefix
             if command_exists npm; then
                 print_info "Installing TypeScript globally..."
                 npm install -g typescript
             fi
+            has_node=true
         fi
-        # Install japonette CLI
+    fi
+
+    # japonette check
+    local install_japonette="n"
+    if command_exists japonette; then
+        print_success "japonette CLI is already installed (passing)."
+    else
+        read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
         if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
+            # Ensure Node/npm is present
+            if [ "$has_node" = false ]; then
+                print_info "japonette requires Node.js. Installing Node.js..."
+                if [ "$IS_ARCH" = true ]; then
+                    install_package nodejs
+                    install_package npm
+                else
+                    install_package node
+                fi
+                setup_npm_prefix
+            fi
             if command_exists npm; then
                 print_info "Installing japonette CLI globally..."
                 npm install -g japonette
@@ -337,6 +377,28 @@ setup_neovim() {
     print_success "Neovim configured."
 }
 
+cleanup_installation_temp() {
+    print_info "Cleaning up temporary installation files and caches..."
+    # Clean up Homebrew cache if brew is installed
+    if command_exists brew; then
+        print_info "Cleaning up Homebrew cache..."
+        brew cleanup -s --prune=all || true
+        rm -rf "$HOME/.cache/Homebrew" || true
+    fi
+    
+    # Clean up npm cache if npm is installed
+    if command_exists npm; then
+        print_info "Cleaning up npm cache..."
+        npm cache clean --force || true
+    fi
+    
+    # Remove any stray AppImage or extracted directories in script directory
+    rm -f "$SCRIPT_DIR/nvim.appimage" || true
+    rm -rf "$SCRIPT_DIR/squashfs-root" || true
+    
+    print_success "Cleanup complete."
+}
+
 main() {
     print_info "Starting Comprehensive Setup..."
     
@@ -389,6 +451,9 @@ main() {
             fi
         fi
     fi
+
+    # Cleanup temporary installation files & caches
+    cleanup_installation_temp
 
     print_success "Setup Complete! PLEASE RESTART YOUR TERMINAL."
 }

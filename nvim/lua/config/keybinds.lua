@@ -126,3 +126,6 @@ end
 
 vim.keymap.set("n", "<leader>ot", function() toggle_terminal("bo") end, { desc = "Toggle bottom terminal" })
 vim.keymap.set("n", "<leader>oT", function() toggle_terminal("vert") end, { desc = "Toggle vertical terminal" })
+
+-- Go back to welcoming dashboard/menu from any file
+vim.keymap.set("n", "<leader>db", "<cmd>Alpha<CR>", { desc = "Go back to dashboard menu" })

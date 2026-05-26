@@ -39,9 +39,9 @@ dashboard.section.buttons.val = {
     dashboard.button("e", "  File Explorer", "<cmd>Neotree toggle<cr>"),
     dashboard.button("j", "  Japonette Active", "<cmd>JaponetteActive<cr>"),
     dashboard.button("o", "👥  Japonette Friends", "<cmd>JaponetteFriends<cr>"),
-    dashboard.button("p", "󰏖  Plugins Manager", "<cmd>e ~/.config/nvim/lua/plugin-list.lua<cr>"),
+    dashboard.button("p", "󰏖  Plugins Manager", "<cmd>HelpPlugins<cr>"),
     dashboard.button("c", "  Edit Config", "<cmd>e ~/.config/nvim/init.lua<cr>"),
-    dashboard.button("h", "  Help Keybinds", "<cmd>e ~/.config/nvim/lua/config/keybinds.lua<cr>"),
+    dashboard.button("h", "  Help Keybinds", "<cmd>HelpKeybinds<cr>"),
     dashboard.button("q", "  Quit", "<cmd>qa<cr>"),
 }
 

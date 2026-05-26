@@ -53,7 +53,7 @@ local function run_async_cmd(cmd_args, callback)
         stdout = function(err, data)
             if data then
                 for line in data:gmatch("[^\r\n]+") do
-                    table.insert(stdout, line:gsub("\27%[[0-9;]*[mK]", ""))
+                    table.insert(stdout, (line:gsub("\27%[[0-9;]*[mK]", "")))
                 end
             end
         end,
@@ -336,18 +336,81 @@ local function set_keymaps(buf)
     end, "Show Help")
 end
 
-local function open_japonette_tui()
-    local buf, win = open_japonette_window()
-    state.buf = buf
-    state.win = win
+local open_japonette_tui -- forward declaration
+
+local function open_login_terminal()
+    local width = 80
+    local height = 15
+    local row = math.floor((vim.o.lines - height) / 2)
+    local col = math.floor((vim.o.columns - width) / 2)
     
-    vim.bo[buf].buftype = "nofile"
-    vim.bo[buf].bufhidden = "wipe"
-    vim.bo[buf].filetype = "japonette"
-    vim.bo[buf].swapfile = false
+    local buf = vim.api.nvim_create_buf(false, true)
+    local win = vim.api.nvim_open_win(buf, true, {
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = 'minimal',
+        border = 'rounded',
+        title = ' Japonette Login ',
+        title_pos = 'center',
+    })
     
-    set_keymaps(buf)
-    render()
+    local cmd = "japonette login"
+    if vim.fn.executable("japonette") == 0 and vim.fn.executable("npx") == 1 then
+        cmd = "npx japonette login"
+    end
+    
+    vim.fn.termopen(cmd, {
+        on_exit = function(_, exit_code)
+            vim.schedule(function()
+                pcall(vim.api.nvim_win_close, win, true)
+                if exit_code == 0 then
+                    vim.notify("Japonette login successful!", vim.log.levels.INFO)
+                    open_japonette_tui()
+                else
+                    vim.notify("Japonette login failed or cancelled.", vim.log.levels.ERROR)
+                end
+            end)
+        end
+    })
+    
+    vim.cmd("startinsert")
+end
+
+open_japonette_tui = function()
+    -- Check if user is logged in
+    run_async_cmd("whoami", function(output)
+        local is_logged_in = true
+        for _, line in ipairs(output) do
+            if line:match("Error") or line:match("Command failed") or line:match("No cached token") or line:match("not found") then
+                is_logged_in = false
+                break
+            end
+        end
+        
+        if #output == 0 or not is_logged_in then
+            vim.ui.input({ prompt = "Japonette is not logged in. Log in now? (y/N): " }, function(input)
+                if input and (input:lower() == "y" or input:lower() == "yes") then
+                    open_login_terminal()
+                end
+            end)
+            return
+        end
+
+        local buf, win = open_japonette_window()
+        state.buf = buf
+        state.win = win
+        
+        vim.bo[buf].buftype = "nofile"
+        vim.bo[buf].bufhidden = "wipe"
+        vim.bo[buf].filetype = "japonette"
+        vim.bo[buf].swapfile = false
+        
+        set_keymaps(buf)
+        render()
+    end)
 end
 
 vim.api.nvim_create_user_command("Japonette", open_japonette_tui, {})
