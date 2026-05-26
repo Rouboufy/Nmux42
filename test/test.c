@@ -6,16 +6,12 @@
 /*   By: blanglai </var/spool/mail/blanglai>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/26 16:11:45 by blanglai          #+#    #+#             */
-/*   Updated: 2026/05/26 16:20:19 by blanglai         ###   ########.fr       */
+/*   Updated: 2026/05/26 16:29:45 by blanglai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-int i = 0;
-int main(void)
+int main()
 {
-	int b = 2;
-}
-int y = 2;
-int ben()
-{
+	int i = 0;
+	int y = 0;
 }
