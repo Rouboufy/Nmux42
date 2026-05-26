@@ -1,0 +1,21 @@
+# Nmux42 Git Ignore
+
+# Neovim data/state (if run locally)
+scratch/
+*.log
+*.shada
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.bak
+*.tmp
+nvim.appimage
+squashfs-root/
+
+# Local node/python envs (if any)
+node_modules/
+__pycache__/
+.venv/
