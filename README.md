@@ -20,6 +20,14 @@ cd Nmux42
 bash setup.sh
 ```
 
+## 🗑️ Uninstallation
+
+To revert all changes and remove configurations:
+
+```bash
+bash uninstall.sh
+```
+
 ## ✨ "Smart" Features
 
 - **Arch Linux Native**: Automatically detects Arch and uses `pacman` with `sudo` for high-performance native binaries.
