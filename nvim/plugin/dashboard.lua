@@ -33,14 +33,14 @@ for i, line in ipairs(logo) do
 end
 
 dashboard.section.buttons.val = {
-    dashboard.button("n", "  New File",             "<cmd>enew<cr>"),
-    dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
-    dashboard.button("r", "  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
-    dashboard.button("e", "  File Explorer",        "<cmd>Neotree toggle<cr>"),
-    dashboard.button("g", "  Git (TUI)",            "<cmd>GitUI<cr>"),
-    dashboard.button("J", "  Japonette Active",     "<cmd>JaponetteActive<cr>"),
-    dashboard.button("O", "👥  Japonette Friends",   "<cmd>JaponetteFriends<cr>"),
-    dashboard.button("v", "  Vim Bindings",         "<cmd>VimBindings<cr>"),
+    dashboard.button("n", "󰝒  New File",             "<cmd>enew<cr>"),
+    dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
+    dashboard.button("r", "󰄉  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
+    dashboard.button("e", "󰙅  File Explorer",        "<cmd>Neotree toggle<cr>"),
+    dashboard.button("g", "󰊢  Git (TUI)",            "<cmd>GitUI<cr>"),
+    dashboard.button("J", "󰴓  Japonette Active",     "<cmd>JaponetteActive<cr>"),
+    dashboard.button("O", "  Japonette Friends",    "<cmd>JaponetteFriends<cr>"),
+    dashboard.button("v", "󰌌  Vim Bindings",         "<cmd>VimBindings<cr>"),
     dashboard.button("p", "󰏖  Plugins Manager",     "<cmd>HelpPlugins<cr>"),
     dashboard.button("u", "󰚰  Update Nmux42",        function()
         local repo_info_ok, repo_info = pcall(require, "config.repo_info")
@@ -72,8 +72,8 @@ dashboard.section.buttons.val = {
             vim.notify("Update script not found at: " .. update_script, vim.log.levels.ERROR)
         end
     end),
-    dashboard.button("c", "  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
-    dashboard.button("q", "  Quit",                 "<cmd>qa<cr>"),
+    dashboard.button("c", "󰒓  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
+    dashboard.button("q", "󰈆  Quit",                 "<cmd>qa<cr>"),
 }
 
 local repo_info_ok, repo_info = pcall(require, "config.repo_info")
