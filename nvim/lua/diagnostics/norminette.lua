@@ -13,26 +13,28 @@ function M.run()
     local path = vim.api.nvim_buf_get_name(buf)
     if path == "" or vim.fn.filereadable(path) == 0 then return end
 
-    -- Search for norminette in common paths if not in PATH
     local cmd = "norminette"
     if vim.fn.executable(cmd) == 0 then
-        local local_bin = vim.fn.expand("~/.local/bin/norminette")
-        if vim.fn.executable(local_bin) == 1 then
-            cmd = local_bin
+        -- Try mise path specifically since 'which' found it there
+        local mise_bin = vim.fn.expand("~/.local/share/mise/installs/python/3.14.5/bin/norminette")
+        if vim.fn.executable(mise_bin) == 1 then
+            cmd = mise_bin
         else
-            -- Don't spam error notifications, just return silently
+            vim.notify("Norminette: binary NOT FOUND in PATH", vim.log.levels.ERROR)
             return
         end
     end
+
+    vim.notify("Norminette: Checking " .. vim.fn.fnamemodify(path, ":t"), vim.log.levels.INFO)
 
     vim.fn.jobstart({ cmd, path }, {
         stdout_buffered = true,
         on_stdout = function(_, data)
             if not data then return end
             local diagnostics = {}
+            local error_count = 0
             for _, line in ipairs(data) do
                 local clean_line = strip_ansi(line)
-                -- Pattern: Error: NAME (line: X, col: Y): Description
                 local err_name, l, c, desc = clean_line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%s+col:%s+(%d+)%):%s+(.*)")
                 
                 if err_name and l and c then
@@ -43,41 +45,27 @@ function M.run()
                         source = "norminette",
                         message = err_name .. ": " .. desc,
                     })
+                    error_count = error_count + 1
                 end
             end
             vim.diagnostic.set(ns, buf, diagnostics)
-        end,
-        on_stderr = function(_, data)
-            if data and #data > 0 and data[1] ~= "" then
-                -- Optional: handle norminette errors
+            if error_count > 0 then
+                vim.notify("Norminette: Found " .. error_count .. " errors", vim.log.levels.WARN)
+            else
+                vim.notify("Norminette: OK!", vim.log.levels.INFO)
             end
-        end
+        end,
     })
 end
 
 function M.setup()
-    vim.notify("Nmux42: Setting up Norminette diagnostics...", vim.log.levels.INFO)
     local group = vim.api.nvim_create_augroup("NorminetteLSP", { clear = true })
     
-    -- Run on enter and save
     vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
         group = group,
         pattern = { "*.c", "*.h" },
         callback = function()
             M.run()
-        end,
-    })
-    
-    -- Debounced run on insert leave to show errors as you type
-    local timer = nil
-    vim.api.nvim_create_autocmd("InsertLeave", {
-        group = group,
-        pattern = { "*.c", "*.h" },
-        callback = function()
-            if timer then timer:stop() end
-            timer = vim.defer_fn(function()
-                M.run()
-            end, 500)
         end,
     })
 end
