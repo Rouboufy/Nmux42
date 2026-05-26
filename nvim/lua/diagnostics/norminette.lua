@@ -7,7 +7,7 @@ function M.run()
     if vim.bo[buf].filetype ~= "c" then return end
     
     local path = vim.api.nvim_buf_get_name(buf)
-    if path == "" then return end
+    if path == "" or vim.fn.filereadable(path) == 0 then return end
 
     vim.fn.jobstart({ "norminette", path }, {
         stdout_buffered = true,
@@ -15,15 +15,20 @@ function M.run()
             if not data then return end
             local diagnostics = {}
             for _, line in ipairs(data) do
+                -- Debug: print line to see output format
+                -- print("Norminette: " .. line)
+                
+                -- Flexible pattern to catch both standard and legacy norminette output
                 -- Pattern: Error: NAME (line: X, col: Y): Description
-                local type, l, c, desc = line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%col:%s+(%d+)%):%s+(.*)")
-                if type then
+                local err_name, l, c, desc = line:match("Error:%s+(%S+)%s+%(line:%s+(%d+),%s+col:%s+(%d+)%):%s+(.*)")
+                
+                if err_name and l and c then
                     table.insert(diagnostics, {
                         lnum = tonumber(l) - 1,
-                        col = tonumber(c) - 1,
+                        col = math.max(0, tonumber(c) - 1),
                         severity = vim.diagnostic.severity.ERROR,
                         source = "norminette",
-                        message = type .. ": " .. desc,
+                        message = err_name .. ": " .. desc,
                     })
                 end
             end
@@ -33,8 +38,10 @@ function M.run()
 end
 
 function M.setup()
-    vim.api.nvim_create_autocmd({ "BufWritePost", "BufEnter" }, {
-        pattern = "*.c,*.h",
+    local group = vim.api.nvim_create_augroup("NorminetteLSP", { clear = true })
+    vim.api.nvim_create_autocmd({ "BufWritePost", "BufEnter", "InsertLeave" }, {
+        group = group,
+        pattern = { "*.c", "*.h" },
         callback = function()
             M.run()
         end,
