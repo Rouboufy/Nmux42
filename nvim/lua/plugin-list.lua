@@ -21,14 +21,18 @@ return {
     "MunifTanjim/nui.nvim",
     "nvim-neo-tree/neo-tree.nvim",
     "goolord/alpha-nvim",
+    -- Git
+    "lewis6991/gitsigns.nvim",
+    "kdheepak/lazygit.nvim",
+
     -- Preinstalled themes
-    "catppuccin/nvim",
+    { "catppuccin/nvim",        name = "catppuccin" },
     "Mofiqul/vscode.nvim",
     "ellisonleao/gruvbox.nvim",
     "shaunsingh/nord.nvim",
-    "sontungex/matteblack.nvim",
-    { "rose-pine/neovim", name = "rose-pine" },
+    "tahayvr/matteblack.nvim",
+    { "rose-pine/neovim",       name = "rose-pine" },
     "rebelot/kanagawa.nvim",
     "EdenEast/nightfox.nvim",
-    { "bjarneo/aether.nvim", branch = "v3" },
+    { "bjarneo/aether.nvim",    branch = "v3" },
 }

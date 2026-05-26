@@ -33,16 +33,17 @@ for i, line in ipairs(logo) do
 end
 
 dashboard.section.buttons.val = {
-    dashboard.button("n", "  New File", "<cmd>enew<cr>"),
-    dashboard.button("f", "  Find File", "<cmd>Telescope find_files<cr>"),
-    dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<cr>"),
-    dashboard.button("e", "  File Explorer", "<cmd>Neotree toggle<cr>"),
-    dashboard.button("j", "  Japonette Active", "<cmd>JaponetteActive<cr>"),
-    dashboard.button("o", "👥  Japonette Friends", "<cmd>JaponetteFriends<cr>"),
-    dashboard.button("p", "󰏖  Plugins Manager", "<cmd>HelpPlugins<cr>"),
-    dashboard.button("c", "  Edit Config", "<cmd>e ~/.config/nvim/init.lua<cr>"),
-    dashboard.button("h", "  Help Keybinds", "<cmd>HelpKeybinds<cr>"),
-    dashboard.button("q", "  Quit", "<cmd>qa<cr>"),
+    dashboard.button("n", "  New File",             "<cmd>enew<cr>"),
+    dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
+    dashboard.button("r", "  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
+    dashboard.button("e", "  File Explorer",        "<cmd>Neotree toggle<cr>"),
+    dashboard.button("g", "  Git (TUI)",            "<cmd>GitUI<cr>"),
+    dashboard.button("J", "  Japonette Active",     "<cmd>JaponetteActive<cr>"),
+    dashboard.button("O", "👥  Japonette Friends",   "<cmd>JaponetteFriends<cr>"),
+    dashboard.button("v", "  Vim Bindings",         "<cmd>VimBindings<cr>"),
+    dashboard.button("p", "󰏖  Plugins Manager",     "<cmd>HelpPlugins<cr>"),
+    dashboard.button("c", "  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
+    dashboard.button("q", "  Quit",                 "<cmd>qa<cr>"),
 }
 
 dashboard.section.footer.val = "Welcome to Nmux42 development environment!"

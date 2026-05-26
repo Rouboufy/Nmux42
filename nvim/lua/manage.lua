@@ -3,13 +3,14 @@ local plug_dir = vim.fn.stdpath("data") .. "/plugins"
 
 local function ensure(spec)
     local repo = type(spec) == "string" and spec or spec[1]
-    local name = repo:match(".+/(.+)$")
+    -- Allow a `name` field to override the directory name (prevents conflicts like catppuccin/nvim)
+    local name = (type(spec) == "table" and spec.name) or repo:match(".+/(.+)$")
     local path = plug_dir .. "/" .. name
 
     if not vim.uv.fs_stat(path) then
         vim.fn.mkdir(plug_dir, "p")
         local cmd = { "git", "clone", "--depth=1" }
-        if spec.branch then
+        if type(spec) == "table" and spec.branch then
             table.insert(cmd, "-b")
             table.insert(cmd, spec.branch)
         end

@@ -31,8 +31,9 @@ bash setup.sh
 
 ### Core Applications
 - **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, interactive welcome dashboard, [Japonette TUI](https://github.com/sakemyali/japonette) integration, interactive theme selector, and LSP settings.
-- **Tmux**: Power-user configuration with `Ctrl-a` prefix and pane navigation shortcuts.
-- **Zsh**: Automatically configured as the default shell with a clean prompt.
+- **Tmux**: Power-user configuration with `Ctrl-a` prefix, pane navigation shortcuts, and **automatic color sync with the active Neovim colorscheme**.
+- **Zsh**: Automatically configured as the default shell with a clean prompt. **Auto-attaches to a tmux session** on every terminal open.
+- **JetBrainsMono Nerd Font**: Automatically downloaded and installed to `~/.local/share/fonts` (no sudo). Required for icons in Neo-tree, lualine, and the dashboard.
 
 ### Compilers & Runtimes (Auto-Installed)
 - **C/C++**: `gcc`, `clang`
@@ -48,14 +49,33 @@ bash setup.sh
 | Shortcut | Action |
 |----------|--------|
 | `<leader>e` | **Toggle File Explorer** (Neo-tree) |
-| `<leader>cd` | Open File Explorer (NetRW fallback) |
 | `<leader>ff` | Find Files (Telescope) |
 | `<leader>fg` | Live Grep (Telescope) |
 | `<leader>a` | Add file to Harpoon |
 | `Ctrl + e` | Toggle Harpoon Menu |
-| `<leader>ja` | **Open Japonette TUI** (Active Campus tab) |
-| `<leader>jf` | **Open Japonette TUI** (Friends Watchlist tab) |
-| `<leader>th` | **Select Colorscheme TUI** (interactive selector with preview pane) |
+| `<leader>Ja` | **Open Japonette TUI** (Active Campus tab) |
+| `<leader>Jf` | **Open Japonette TUI** (Friends Watchlist tab) |
+| `<leader>th` | **Select Colorscheme TUI** (live preview + tmux sync) |
+| `<leader>vb` / `<leader>?` | **Vim Bindings Reference** (motions + custom keys) |
+| `<leader>hk` | Custom Nmux42 keybinds quick-help |
+| `<leader>hp` | Plugins manager list |
+| `<leader>db` | Return to welcome dashboard |
+
+#### 🌿 Git Keybinds (gitsigns + lazygit)
+| Shortcut | Action |
+|----------|--------|
+| `<leader>gg` | **Open LazyGit** (full TUI) |
+| `<leader>gf` | LazyGit file log |
+| `<leader>gc` | LazyGit current file history |
+| `<leader>gs` | Stage hunk under cursor |
+| `<leader>gr` | Reset hunk under cursor |
+| `<leader>gS` | Stage entire buffer |
+| `<leader>gu` | Undo last staged hunk |
+| `<leader>gp` | Preview hunk inline |
+| `<leader>gd` | Diff this vs index |
+| `<leader>gb` | Toggle inline git blame |
+| `]h` / `[h` | Jump to next / previous git hunk |
+| `ih` | Text object: select hunk (in operator/visual mode) |
 
 #### Japonette TUI Buffer Controls
 | Key | Action |
@@ -71,6 +91,14 @@ bash setup.sh
 | `h` | Show help cheatsheet |
 | `q` / `<Esc>` | Close the Japonette TUI window |
 
+#### Vim Bindings Reference TUI
+| Key | Action |
+|-----|--------|
+| `Tab` / `1` / `2` | Switch between **Vim Motions** and **Nmux42 Keys** tabs |
+| `/` | Search within the reference |
+| `q` / `Esc` | Close the window |
+
+
 ### 🖥️ Tmux & Navigation
 | Shortcut | Action |
 |----------|--------|
@@ -81,8 +109,11 @@ bash setup.sh
 
 ## 🛠️ Post-Installation
 1. **Restart your terminal** after running `setup.sh`.
-2. Open Neovim (`nvim`) and wait for the custom plugin manager to download/clone the plugins automatically on first boot.
-3. Run `:Mason` to manage additional LSPs and formatters.
+2. Your terminal will **automatically open inside a tmux session** (`main`) on every launch.
+3. Open Neovim (`nvim`) and wait for the custom plugin manager to download/clone the plugins automatically on first boot.
+4. **Set your terminal emulator font** to `JetBrainsMono Nerd Font` (or `JetBrainsMono NF`) for all icons to render correctly. The font is already installed to `~/.local/share/fonts/` by the setup script.
+5. Run `:Mason` to manage additional LSPs and formatters.
+6. Press `<Space>th` to open the theme selector — selecting a theme **automatically recolors tmux** to match in real-time.
 
 ## 📂 Organized .zshrc
 The script generates a structured `.zshrc` including:

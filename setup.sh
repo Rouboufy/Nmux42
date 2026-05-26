@@ -89,6 +89,58 @@ setup_npm_prefix() {
     fi
 }
 
+# Check if Node.js version is >= 14 (needed for nullish coalescing '??' operator used by japonette)
+is_node_version_ok() {
+    local node_bin
+    node_bin="$(command -v node 2>/dev/null || command -v nodejs 2>/dev/null)"
+    if [ -z "$node_bin" ]; then
+        return 1
+    fi
+    local major
+    major=$("$node_bin" -e 'process.stdout.write(process.versions.node.split(".")[0])' 2>/dev/null)
+    if [ -n "$major" ] && [ "$major" -ge 14 ]; then
+        return 0
+    fi
+    return 1
+}
+
+# Install or switch to a modern Node.js (>= 14) via nvm (fully passwordless, no sudo)
+ensure_modern_node() {
+    if is_node_version_ok; then
+        print_success "Node.js version is >= 14. No upgrade needed."
+        return
+    fi
+
+    local node_ver
+    node_ver=$(node --version 2>/dev/null || nodejs --version 2>/dev/null || echo "none")
+    print_warning "Node.js version ($node_ver) is too old for japonette (requires >= 14 for '??' operator)."
+    print_info "Installing Node.js LTS via nvm (no sudo needed)..."
+
+    # Install nvm if not already present
+    if [ ! -d "$HOME/.nvm" ]; then
+        print_info "Downloading nvm..."
+        curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh -o /tmp/nvm_install.sh
+        # Run install without modifying shell rc files (we add it manually to .zshrc below)
+        PROFILE=/dev/null bash /tmp/nvm_install.sh
+        rm -f /tmp/nvm_install.sh
+    fi
+
+    # Load nvm for this shell session
+    export NVM_DIR="$HOME/.nvm"
+    # shellcheck source=/dev/null
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+    if ! command_exists nvm; then
+        print_error "nvm failed to load. Please install Node.js >= 14 manually."
+        return 1
+    fi
+
+    nvm install --lts
+    nvm use --lts
+    nvm alias default 'lts/*'
+    print_success "Node.js LTS installed and active via nvm: $(node --version)"
+}
+
 # Check if Neovim version is at least 0.11.0
 is_nvim_version_ok() {
     if ! command_exists nvim; then
@@ -237,7 +289,30 @@ install_package() {
 # Ask User for Extras
 ask_optional() {
     print_info "--- Optional Packages ---"
-    
+
+    # lazygit check
+    if command_exists lazygit; then
+        print_success "lazygit is already installed (passing)."
+    else
+        read -p "Install lazygit (full-screen TUI git client, used by <leader>gg in Neovim)? (y/N): " install_lg
+        if [[ "$install_lg" =~ ^[Yy]$ ]]; then
+            print_info "Installing lazygit (static binary, no sudo)..."
+            local LG_VERSION
+            LG_VERSION=$(curl -fsSL "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
+                | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v')
+            if [ -n "$LG_VERSION" ]; then
+                local LG_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_x86_64.tar.gz"
+                mkdir -p "$HOME/.local/bin"
+                curl -fsSL "$LG_URL" | tar -xz -C /tmp lazygit
+                mv /tmp/lazygit "$HOME/.local/bin/lazygit"
+                chmod +x "$HOME/.local/bin/lazygit"
+                print_success "lazygit v${LG_VERSION} installed to ~/.local/bin/lazygit."
+            else
+                print_warning "Could not determine latest lazygit version. Check: https://github.com/jesseduffield/lazygit/releases"
+            fi
+        fi
+    fi
+
     # Zig check
     local install_zig="n"
     if command_exists zig; then
@@ -246,6 +321,7 @@ ask_optional() {
         read -p "Install Zig? (y/N): " install_zig
         if [[ "$install_zig" =~ ^[Yy]$ ]]; then
             install_package zig
+
         fi
     fi
 
@@ -254,8 +330,18 @@ ask_optional() {
     local has_node=false
     if command_exists node || command_exists nodejs; then
         has_node=true
+        # Check version is modern enough
+        if ! is_node_version_ok; then
+            local cur_ver
+            cur_ver=$(node --version 2>/dev/null || nodejs --version 2>/dev/null)
+            print_warning "Node.js $cur_ver is installed but too old (japonette requires >= 14)."
+            read -p "Upgrade Node.js to LTS via nvm? (y/N): " upgrade_node
+            if [[ "$upgrade_node" =~ ^[Yy]$ ]]; then
+                ensure_modern_node
+            fi
+        fi
         if command_exists tsc; then
-            print_success "Node.js stack (Node, TS) is already installed (passing)."
+            print_success "Node.js stack (Node, TS) is ready."
         else
             print_info "Node.js is installed, but TypeScript is missing."
             read -p "Install TypeScript globally? (y/N): " install_ts
@@ -270,12 +356,8 @@ ask_optional() {
     else
         read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
         if [[ "$install_node" =~ ^[Yy]$ ]]; then
-            if [ "$IS_ARCH" = true ]; then
-                install_package nodejs
-                install_package npm
-            else
-                install_package node
-            fi
+            # Use nvm for a guaranteed modern version (no sudo, works on 42 cluster)
+            ensure_modern_node
             setup_npm_prefix
             if command_exists npm; then
                 print_info "Installing TypeScript globally..."
@@ -292,17 +374,16 @@ ask_optional() {
     else
         read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
         if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
-            # Ensure Node/npm is present
-            if [ "$has_node" = false ]; then
-                print_info "japonette requires Node.js. Installing Node.js..."
-                if [ "$IS_ARCH" = true ]; then
-                    install_package nodejs
-                    install_package npm
-                else
-                    install_package node
-                fi
-                setup_npm_prefix
+            # Ensure we have a modern enough Node.js (>= 14 for japonette's ?? operator)
+            if ! is_node_version_ok; then
+                print_info "japonette requires Node.js >= 14. Installing via nvm..."
+                ensure_modern_node
+            elif [ "$has_node" = false ]; then
+                print_info "japonette requires Node.js. Installing via nvm..."
+                ensure_modern_node
             fi
+            # Always configure local npm directory prefix + bypass SSL errors
+            setup_npm_prefix
             if command_exists npm; then
                 print_info "Installing japonette CLI globally..."
                 npm install -g japonette
@@ -351,6 +432,20 @@ SAVEHIST=10000
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
 
+# --- nvm (Node Version Manager) ---
+# Loads nvm and makes the nvm-managed Node.js available in every shell
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+
+# --- Auto-launch tmux ---
+# Automatically attach to (or create) a tmux session when opening a terminal.
+# Skips if: already inside tmux, or running inside an IDE/VSCode integrated terminal.
+if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ] && [ -z "$VSCODE_INJECTION" ] && [ -z "$INTELLIJ_ENVIRONMENT_READER" ]; then
+    # Attach to an existing session named 'main', or create it
+    tmux new-session -A -s main
+fi
+
 # --- Prompt ---
 PROMPT="%F{blue}%~%f %F{green}❯%f "
 EOF
@@ -361,6 +456,11 @@ setup_tmux() {
     print_info "Configuring Tmux..."
     mkdir -p "$HOME/.config/tmux"
     cp "$SCRIPT_DIR/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+    # Install the theme sync script
+    cp "$SCRIPT_DIR/tmux-theme.sh" "$HOME/.config/tmux/tmux-theme.sh"
+    chmod +x "$HOME/.config/tmux/tmux-theme.sh"
+    # Generate initial color palette from the current nvim theme (or default tokyonight)
+    bash "$HOME/.config/tmux/tmux-theme.sh" 2>/dev/null || true
     # Create symlink/copy for ~/.tmux.conf for maximum compatibility
     cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
     print_success "Tmux configured."
@@ -375,6 +475,39 @@ setup_neovim() {
     fi
     cp -r "$SCRIPT_DIR/nvim" "$HOME/.config/nvim"
     print_success "Neovim configured."
+}
+
+# Install JetBrainsMono Nerd Font (user-space, no sudo)
+install_nerd_font() {
+    local FONT_NAME="JetBrainsMono"
+    local FONT_DIR="$HOME/.local/share/fonts"
+    # Check if the font is already installed
+    if fc-list 2>/dev/null | grep -qi "JetBrainsMono" 2>/dev/null; then
+        print_success "JetBrainsMono Nerd Font already installed."
+        return
+    fi
+    print_info "Installing JetBrainsMono Nerd Font (required for icons in Neovim/tmux)..."
+    mkdir -p "$FONT_DIR"
+    local VERSION="v3.2.1"
+    local BASE_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${VERSION}/JetBrainsMono.zip"
+    local TMP_ZIP="/tmp/JetBrainsMono.zip"
+    if curl -fsSL "$BASE_URL" -o "$TMP_ZIP"; then
+        if command_exists unzip; then
+            unzip -o -q "$TMP_ZIP" '*.ttf' -d "$FONT_DIR/"
+            rm -f "$TMP_ZIP"
+            # Refresh font cache (no sudo needed)
+            if command_exists fc-cache; then
+                fc-cache -f "$FONT_DIR" 2>/dev/null || true
+            fi
+            print_success "JetBrainsMono Nerd Font installed to $FONT_DIR."
+            print_info "NOTE: Set your terminal emulator font to 'JetBrainsMono Nerd Font' for icons to display correctly."
+        else
+            print_warning "'unzip' not found. Please install it and run: unzip $TMP_ZIP -d $FONT_DIR/"
+        fi
+    else
+        print_warning "Failed to download Nerd Font. Install manually from:"
+        print_warning "https://github.com/ryanoasis/nerd-fonts/releases/latest"
+    fi
 }
 
 cleanup_installation_temp() {
@@ -436,18 +569,25 @@ main() {
     setup_organized_zshrc
     setup_tmux
     setup_neovim
+    install_nerd_font
     
     # Change Shell
     if command_exists zsh; then
         ZSH_PATH="$(command -v zsh)"
         if [ "$SHELL" != "$ZSH_PATH" ]; then
-            print_info "Changing default shell to zsh..."
-            if chsh -s "$ZSH_PATH"; then
-                print_success "Shell changed to zsh successfully."
+            print_info "Your current shell is not zsh ($SHELL)."
+            read -p "Would you like to change your default shell to zsh? (y/N): " change_shell
+            if [[ "$change_shell" =~ ^[Yy]$ ]]; then
+                print_info "Changing default shell to zsh..."
+                if chsh -s "$ZSH_PATH"; then
+                    print_success "Shell changed to zsh successfully."
+                else
+                    print_warning "Failed to change shell using chsh."
+                    print_info "You can manually set it by running: chsh -s $ZSH_PATH"
+                    print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
+                fi
             else
-                print_warning "Failed to change shell using chsh."
-                print_info "You can manually set it by running: chsh -s $ZSH_PATH"
-                print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
+                print_info "Skipping shell change. You can manually run: chsh -s $ZSH_PATH"
             fi
         fi
     fi

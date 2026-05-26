@@ -425,5 +425,5 @@ vim.api.nvim_create_user_command("JaponetteFriends", function()
     open_japonette_tui()
 end, {})
 
-vim.keymap.set("n", "<leader>ja", "<cmd>JaponetteActive<cr>", { desc = "Open Japonette Active TUI" })
-vim.keymap.set("n", "<leader>jf", "<cmd>JaponetteFriends<cr>", { desc = "Open Japonette Friends TUI" })
+vim.keymap.set("n", "<leader>Ja", "<cmd>JaponetteActive<cr>",  { desc = "Open Japonette Active TUI" })
+vim.keymap.set("n", "<leader>Jf", "<cmd>JaponetteFriends<cr>", { desc = "Open Japonette Friends TUI" })
