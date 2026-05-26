@@ -365,12 +365,12 @@ local function open_login_terminal()
     vim.fn.termopen(cmd, {
         on_exit = function(_, exit_code)
             vim.schedule(function()
-                pcall(vim.api.nvim_win_close, win, true)
                 if exit_code == 0 then
+                    pcall(vim.api.nvim_win_close, win, true)
                     vim.notify("Japonette login successful!", vim.log.levels.INFO)
                     open_japonette_tui()
                 else
-                    vim.notify("Japonette login failed or cancelled.", vim.log.levels.ERROR)
+                    vim.notify("Japonette login failed with exit code " .. exit_code, vim.log.levels.ERROR)
                 end
             end)
         end
