@@ -579,7 +579,7 @@ main() {
     install_package zsh
     
     # Search Tools
-    install_package ripgrep
+    install_package ripgrep rg
     if ! command_exists fd && ! command_exists fdfind; then
         if [ "$IS_ARCH" = true ] && command_exists pacman && has_sudo; then
             install_package fd
