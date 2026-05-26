@@ -42,6 +42,29 @@ dashboard.section.buttons.val = {
     dashboard.button("O", "👥  Japonette Friends",   "<cmd>JaponetteFriends<cr>"),
     dashboard.button("v", "  Vim Bindings",         "<cmd>VimBindings<cr>"),
     dashboard.button("p", "󰏖  Plugins Manager",     "<cmd>HelpPlugins<cr>"),
+    dashboard.button("u", "󰚰  Update Nmux42",        function()
+        local repo_info_ok, repo_info = pcall(require, "config.repo_info")
+        local repo_path = repo_info_ok and repo_info.path or (vim.fn.expand("~/Nmux42"))
+        local update_script = repo_path .. "/update.sh"
+        
+        if vim.fn.executable(update_script) == 1 then
+            -- Run update script in a floating terminal
+            local width = 80
+            local height = 20
+            local row = math.floor((vim.o.lines - height) / 2)
+            local col = math.floor((vim.o.columns - width) / 2)
+            local buf = vim.api.nvim_create_buf(false, true)
+            local win = vim.api.nvim_open_win(buf, true, {
+                relative = 'editor', width = width, height = height,
+                row = row, col = col, border = 'rounded',
+                title = ' Nmux42 Update ', title_pos = 'center',
+            })
+            vim.fn.termopen(update_script)
+            vim.cmd("startinsert")
+        else
+            vim.notify("Update script not found at: " .. update_script, vim.log.levels.ERROR)
+        end
+    end),
     dashboard.button("c", "  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
     dashboard.button("q", "  Quit",                 "<cmd>qa<cr>"),
 }

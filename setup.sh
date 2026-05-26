@@ -474,6 +474,11 @@ setup_neovim() {
         mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak.$(date +%Y%m%d-%H%M%S)"
     fi
     cp -r "$SCRIPT_DIR/nvim" "$HOME/.config/nvim"
+    
+    # Record the repository path for the Update feature
+    mkdir -p "$HOME/.config/nvim/lua/config"
+    echo "return { path = \"$SCRIPT_DIR\" }" > "$HOME/.config/nvim/lua/config/repo_info.lua"
+    
     print_success "Neovim configured."
 }
 
@@ -534,6 +539,10 @@ cleanup_installation_temp() {
 
 main() {
     print_info "Starting Comprehensive Setup..."
+    
+    # Ensure scripts are executable
+    chmod +x "$SCRIPT_DIR/update.sh" 2>/dev/null || true
+    chmod +x "$SCRIPT_DIR/uninstall.sh" 2>/dev/null || true
     
     # Essential Tools
     install_proper_neovim

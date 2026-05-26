@@ -20,6 +20,14 @@ cd Nmux42
 bash setup.sh
 ```
 
+## 🔄 Update
+
+You can update Nmux42 directly from the Neovim dashboard by pressing **`u`**, or manually by running:
+
+```bash
+bash update.sh
+```
+
 ## 🗑️ Uninstallation
 
 To revert all changes and remove configurations:
