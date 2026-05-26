@@ -35,4 +35,7 @@ return {
     "rebelot/kanagawa.nvim",
     "EdenEast/nightfox.nvim",
     { "bjarneo/aether.nvim",    branch = "v3" },
+
+    -- 42 Specific
+    { "Rouboufy/Norm-format" },
 }
