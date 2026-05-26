@@ -79,6 +79,8 @@ setup_npm_prefix() {
         print_info "Configuring npm to install packages locally in $HOME/.npm-global (no sudo)..."
         mkdir -p "$HOME/.npm-global"
         npm config set prefix "$HOME/.npm-global"
+        # Bypass SSL proxy validation on 42 school network
+        npm config set strict-ssl false
         # Export prefix path for the current installer session
         export PATH="$HOME/.npm-global/bin:$PATH"
     fi
