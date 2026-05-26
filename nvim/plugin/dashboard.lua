@@ -64,11 +64,47 @@ dashboard.section.buttons.val = {
                 on_exit = function(_, exit_code)
                     if exit_code == 0 then
                         vim.api.nvim_win_close(win, true)
-                        vim.notify("Nmux42 updated successfully! Reloading configuration...", vim.log.levels.INFO)
-                        -- Reload the config to apply changes instantly
-                        pcall(vim.cmd, "source " .. vim.fn.stdpath("config") .. "/init.lua")
-                        -- Return to dashboard
-                        pcall(vim.cmd, "Alpha")
+                        
+                        -- Prompt user for reload
+                        vim.schedule(function()
+                            local confirm_buf = vim.api.nvim_create_buf(false, true)
+                            local c_width = 50
+                            local c_height = 5
+                            local c_row = math.floor((vim.o.lines - c_height) / 2)
+                            local c_col = math.floor((vim.o.columns - c_width) / 2)
+                            
+                            local confirm_win = vim.api.nvim_open_win(confirm_buf, true, {
+                                relative = 'editor', width = c_width, height = c_height,
+                                row = c_row, col = c_col, border = 'rounded',
+                                title = ' Nmux42 Reload ', title_pos = 'center',
+                            })
+                            
+                            vim.api.nvim_buf_set_lines(confirm_buf, 0, -1, false, {
+                                "",
+                                "  Nmux42 has been updated successfully!",
+                                "  A reload is required to apply the changes.",
+                                "",
+                                "         [y] Reload now    [n] Not now"
+                            })
+                            
+                            local function close_confirm()
+                                if vim.api.nvim_win_is_valid(confirm_win) then
+                                    vim.api.nvim_win_close(confirm_win, true)
+                                end
+                            end
+                            
+                            vim.keymap.set('n', 'y', function()
+                                close_confirm()
+                                vim.notify("Reloading configuration...", vim.log.levels.INFO)
+                                pcall(vim.cmd, "source " .. vim.fn.stdpath("config") .. "/init.lua")
+                                pcall(vim.cmd, "Alpha")
+                            end, { buffer = confirm_buf, silent = true })
+                            
+                            vim.keymap.set('n', 'n', function()
+                                close_confirm()
+                                vim.notify("Update applied. Restart Neovim manually to see changes.", vim.log.levels.WARN)
+                            end, { buffer = confirm_buf, silent = true })
+                        end)
                     end
                 end
             })
