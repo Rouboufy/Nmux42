@@ -17,12 +17,55 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Confirmation
-read -p "Are you sure you want to uninstall Nmux42 and revert configuration changes? (y/N): " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    print_info "Uninstall cancelled."
+disable_tmux_autostart() {
+    ZSHRC="$HOME/.zshrc"
+    if [ -f "$ZSHRC" ]; then
+        if grep -q "# --- Auto-launch tmux ---" "$ZSHRC"; then
+            print_info "Disabling tmux auto-launch in .zshrc..."
+            # Create a backup of the current .zshrc before modifying
+            cp "$ZSHRC" "${ZSHRC}.pre-tmux-disable"
+            # Remove the tmux auto-launch block
+            sed -i '/# --- Auto-launch tmux ---/,/^fi/d' "$ZSHRC"
+            print_success "Tmux auto-launch disabled. (Backup saved to .zshrc.pre-tmux-disable)"
+            print_info "Please restart your terminal for changes to take effect."
+        else
+            print_warning "Tmux auto-launch block not found in .zshrc."
+        fi
+    else
+        print_error ".zshrc not found."
+    fi
+}
+
+# Handle flags
+if [[ "$1" == "--disable-tmux" ]]; then
+    disable_tmux_autostart
     exit 0
 fi
+
+# Main Menu
+print_info "Nmux42 Uninstaller / Configurator"
+echo -e "1) ${RED}Full Uninstall${NC} (Remove all configs, restore backups)"
+echo -e "2) ${YELLOW}Disable tmux auto-launch${NC} (Keep everything else)"
+echo -e "3) Cancel"
+read -p "Select an option [1-3]: " choice
+
+case $choice in
+    1)
+        read -p "Are you sure you want to uninstall Nmux42 and revert configuration changes? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            print_info "Uninstall cancelled."
+            exit 0
+        fi
+        ;;
+    2)
+        disable_tmux_autostart
+        exit 0
+        ;;
+    *)
+        print_info "Exiting."
+        exit 0
+        ;;
+esac
 
 # 1. Restore .zshrc
 print_info "Restoring .zshrc..."

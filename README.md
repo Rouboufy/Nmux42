@@ -28,13 +28,31 @@ You can update Nmux42 directly from the Neovim dashboard by pressing **`u`**, or
 bash update.sh
 ```
 
-## 🗑️ Uninstallation
+## 🗑️ Uninstallation & Configuration
 
-To revert all changes and remove configurations:
+Nmux42 includes a versatile uninstaller that can either revert everything or just tweak specific behaviors.
 
+### Options:
+
+1.  **Full Uninstall**: Reverts all changes, removes `~/.config/nvim`, `~/.config/tmux`, and attempts to restore your original `.zshrc` from the backup created during installation.
+2.  **Disable Tmux Auto-launch**: Removes only the logic that automatically starts tmux when you open a terminal, keeping all other configurations and plugins intact.
+
+### Commands:
+
+**Interactive Menu:**
 ```bash
 bash uninstall.sh
 ```
+*Follow the prompts to choose between a full uninstall or disabling tmux.*
+
+**Quick Disable (Tmux Only):**
+```bash
+bash uninstall.sh --disable-tmux
+```
+
+### 🛡️ Safety
+- Before modifying your `.zshrc` to disable tmux, a backup is automatically created at `~/.zshrc.pre-tmux-disable`.
+- During a full uninstall, the script will prompt you before removing larger components like NVM or Homebrew.
 
 ## ✨ "Smart" Features
 
