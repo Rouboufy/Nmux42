@@ -60,9 +60,28 @@ ensure_brew() {
         load_brew
         return
     fi
-    print_info "Homebrew not found. Installing..."
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    print_info "Homebrew not found. Installing locally in home directory (no sudo)..."
+    if [ "$OS" = "Linux" ]; then
+        if [ ! -d "$HOME/.linuxbrew/Homebrew" ]; then
+            git clone https://github.com/Homebrew/brew "$HOME/.linuxbrew/Homebrew"
+        fi
+        mkdir -p "$HOME/.linuxbrew/bin"
+        ln -sf "$HOME/.linuxbrew/Homebrew/bin/brew" "$HOME/.linuxbrew/bin/brew"
+    else
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
     load_brew
+}
+
+# Configure user-space npm global installs (no sudo required)
+setup_npm_prefix() {
+    if command_exists npm; then
+        print_info "Configuring npm to install packages locally in $HOME/.npm-global (no sudo)..."
+        mkdir -p "$HOME/.npm-global"
+        npm config set prefix "$HOME/.npm-global"
+        # Export prefix path for the current installer session
+        export PATH="$HOME/.npm-global/bin:$PATH"
+    fi
 }
 
 # Check if Neovim version is at least 0.11.0
@@ -229,18 +248,22 @@ ask_optional() {
         else
             install_package node
         fi
+        
+        # Configure npm prefix for user-space installation (no sudo required)
+        setup_npm_prefix
+        
         # Install global TS if they wanted Node stack
         if [[ "$install_node" =~ ^[Yy]$ ]]; then
             if command_exists npm; then
                 print_info "Installing TypeScript globally..."
-                sudo npm install -g typescript 2>/dev/null || npm install -g typescript
+                npm install -g typescript
             fi
         fi
         # Install japonette CLI
         if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
             if command_exists npm; then
                 print_info "Installing japonette CLI globally..."
-                sudo npm install -g japonette 2>/dev/null || npm install -g japonette
+                npm install -g japonette
             fi
         fi
     fi
@@ -261,7 +284,7 @@ setup_organized_zshrc() {
 # ========================================
 
 # --- PATH & Environment ---
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
 
 # --- Homebrew ---
 if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
