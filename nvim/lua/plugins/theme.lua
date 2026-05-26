@@ -1,0 +1,1 @@
+/home/blanglai/.config/omarchy/current/theme/neovim.lua

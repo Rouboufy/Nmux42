@@ -7,6 +7,8 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,21 +28,109 @@ command_exists() {
 # OS/Distro Detection
 OS="$(uname -s)"
 IS_ARCH=false
-[ -f /etc/arch-release ] && IS_ARCH=true
+if [ -f /etc/arch-release ]; then
+    IS_ARCH=true
+fi
 
-# Homebrew Fallback
-ensure_brew() {
-    if command_exists brew; then return; fi
-    print_info "Homebrew not found. Installing..."
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# Check for Sudo/Root Rights
+has_sudo() {
+    [ "$EUID" -eq 0 ] || { command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; }
+}
+
+# Homebrew Helper to Load Environment
+load_brew() {
     if [ "$OS" = "Linux" ]; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
+        if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
+            eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+        fi
     else
-        eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
+        if [ -x "/opt/homebrew/bin/brew" ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [ -x "/usr/local/bin/brew" ]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
     fi
 }
 
-# Smart Package Installer
+# Homebrew Fallback
+ensure_brew() {
+    if command_exists brew; then
+        load_brew
+        return
+    fi
+    print_info "Homebrew not found. Installing..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    load_brew
+}
+
+# Check if Neovim version is at least 0.11.0
+is_nvim_version_ok() {
+    if ! command_exists nvim; then
+        return 1
+    fi
+    local version_str
+    version_str="$(nvim --version | head -n 1)"
+    local major minor
+    major=$(echo "$version_str" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'.' -f1 | tr -d 'v')
+    minor=$(echo "$version_str" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'.' -f2)
+    
+    if [ -n "$major" ] && [ -n "$minor" ]; then
+        if [ "$major" -gt 0 ] || { [ "$major" -eq 0 ] && [ "$minor" -ge 11 ]; }; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Install or upgrade to Neovim 0.11.0+ (nightly)
+install_proper_neovim() {
+    print_info "Checking Neovim version..."
+    if is_nvim_version_ok; then
+        print_success "Neovim version is correct ($(nvim --version | head -n 1))."
+        return
+    fi
+
+    if command_exists nvim; then
+        print_warning "Installed Neovim version is older than v0.11.0. Upgrading..."
+    fi
+
+    if [ "$OS" = "Linux" ]; then
+        print_info "Downloading Neovim Nightly AppImage for Linux..."
+        mkdir -p "$HOME/.local/bin"
+        curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+        chmod +x nvim.appimage
+        
+        # Test if it runs natively (requires FUSE)
+        if ./nvim.appimage --version >/dev/null 2>&1; then
+            mv nvim.appimage "$HOME/.local/bin/nvim"
+            print_success "Neovim Nightly AppImage installed to ~/.local/bin/nvim."
+        else
+            print_warning "FUSE not available to run AppImage. Extracting AppImage..."
+            ./nvim.appimage --appimage-extract >/dev/null
+            mkdir -p "$HOME/.local/share/nvim-dist"
+            rm -rf "$HOME/.local/share/nvim-dist/squashfs-root"
+            mv squashfs-root "$HOME/.local/share/nvim-dist/"
+            ln -sf "$HOME/.local/share/nvim-dist/squashfs-root/usr/bin/nvim" "$HOME/.local/bin/nvim"
+            rm -f nvim.appimage
+            print_success "Neovim Nightly extracted and linked to ~/.local/bin/nvim."
+        fi
+    else
+        # macOS
+        print_info "Installing Neovim Nightly via Homebrew..."
+        ensure_brew
+        load_brew
+        brew uninstall --force neovim 2>/dev/null || true
+        brew install neovim --HEAD
+        print_success "Neovim Nightly installed."
+    fi
+}
+
+# State variable to run apt-get update only once
+APT_UPDATED=false
+
+# Smart Package Installer supporting multiple package managers
 install_package() {
     PACKAGE=$1
     ALT_NAME=$2 # For cases like nodejs vs node
@@ -50,20 +140,74 @@ install_package() {
         return
     fi
 
-    if [ "$IS_ARCH" = true ] && command_exists pacman; then
-        print_info "Arch detected: Installing $PACKAGE via pacman..."
-        sudo pacman -S --noconfirm "$PACKAGE"
-    else
-        print_info "Installing $PACKAGE via Homebrew..."
-        ensure_brew
-        # Re-eval brew session
-        if [ "$OS" = "Linux" ]; then
-            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || eval "$(~/.linuxbrew/bin/brew shellenv)"
-        else
-            eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
+    # Try native package manager if sudo/root is available
+    if has_sudo; then
+        if [ "$IS_ARCH" = true ] && command_exists pacman; then
+            print_info "Arch detected with sudo rights: Installing $PACKAGE via pacman..."
+            if [ "$EUID" -eq 0 ]; then
+                pacman -S --noconfirm "$PACKAGE"
+            else
+                sudo pacman -S --noconfirm "$PACKAGE"
+            fi
+            return
+        elif command_exists apt-get; then
+            print_info "Debian/Ubuntu detected: Installing $PACKAGE via apt-get..."
+            # Map packages for apt compatibility
+            local apt_package="$PACKAGE"
+            case "$PACKAGE" in
+                nvim) apt_package="neovim" ;;
+                python) apt_package="python3" ;;
+                go) apt_package="golang" ;;
+            esac
+            
+            if [ "$APT_UPDATED" = false ]; then
+                print_info "Updating apt package index..."
+                if [ "$EUID" -eq 0 ]; then
+                    apt-get update -y
+                else
+                    sudo apt-get update -y
+                fi
+                APT_UPDATED=true
+            fi
+            
+            if [ "$EUID" -eq 0 ]; then
+                apt-get install -y "$apt_package"
+            else
+                sudo apt-get install -y "$apt_package"
+            fi
+            return
+        elif command_exists dnf; then
+            print_info "Fedora/RHEL detected: Installing $PACKAGE via dnf..."
+            # Map packages for dnf compatibility
+            local dnf_package="$PACKAGE"
+            case "$PACKAGE" in
+                nvim) dnf_package="neovim" ;;
+                python) dnf_package="python3" ;;
+            esac
+            
+            if [ "$EUID" -eq 0 ]; then
+                dnf install -y "$dnf_package"
+            else
+                sudo dnf install -y "$dnf_package"
+            fi
+            return
         fi
-        brew install "$PACKAGE"
     fi
+
+    # Fallback to Homebrew (e.g. if no native manager or no sudo rights)
+    print_info "No native manager with sudo rights found or supported. Installing $PACKAGE via Homebrew..."
+    ensure_brew
+    load_brew
+    
+    # Map packages for Homebrew compatibility
+    local brew_package="$PACKAGE"
+    if [ "$PACKAGE" = "clang" ]; then
+        brew_package="llvm"
+    elif [ "$PACKAGE" = "python" ]; then
+        brew_package="python3"
+    fi
+    
+    brew install "$brew_package"
 }
 
 # Ask User for Extras
@@ -71,22 +215,33 @@ ask_optional() {
     print_info "--- Optional Packages ---"
     read -p "Install Zig? (y/N): " install_zig
     read -p "Install Node.js stack (Node, TS, JS)? (y/N): " install_node
+    read -p "Install japonette (42 intra CLI tool)? (y/N): " install_japonette
 
     if [[ "$install_zig" =~ ^[Yy]$ ]]; then
         install_package zig
     fi
 
-    if [[ "$install_node" =~ ^[Yy]$ ]]; then
+    # japonette requires Node.js, so if japonette is requested, ensure node is installed
+    if [[ "$install_node" =~ ^[Yy]$ ]] || [[ "$install_japonette" =~ ^[Yy]$ ]]; then
         if [ "$IS_ARCH" = true ]; then
             install_package nodejs
             install_package npm
         else
             install_package node
         fi
-        # Install global TS
-        if command_exists npm; then
-            print_info "Installing TypeScript globally..."
-            sudo npm install -g typescript 2>/dev/null || npm install -g typescript
+        # Install global TS if they wanted Node stack
+        if [[ "$install_node" =~ ^[Yy]$ ]]; then
+            if command_exists npm; then
+                print_info "Installing TypeScript globally..."
+                sudo npm install -g typescript 2>/dev/null || npm install -g typescript
+            fi
+        fi
+        # Install japonette CLI
+        if [[ "$install_japonette" =~ ^[Yy]$ ]]; then
+            if command_exists npm; then
+                print_info "Installing japonette CLI globally..."
+                sudo npm install -g japonette 2>/dev/null || npm install -g japonette
+            fi
         fi
     fi
 }
@@ -96,7 +251,9 @@ setup_organized_zshrc() {
     ZSHRC="$HOME/.zshrc"
     
     # Backup existing
-    [ -f "$ZSHRC" ] && cp "$ZSHRC" "${ZSHRC}.bak"
+    if [ -f "$ZSHRC" ]; then
+        cp "$ZSHRC" "${ZSHRC}.bak"
+    fi
 
     cat > "$ZSHRC" << 'EOF'
 # ========================================
@@ -107,9 +264,9 @@ setup_organized_zshrc() {
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
 
 # --- Homebrew ---
-if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-elif [ -d "/opt/homebrew" ]; then
+elif [ -x "/opt/homebrew/bin/brew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
@@ -129,82 +286,38 @@ SAVEHIST=10000
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
 
-# --- Starship Prompt (Must be at the end) ---
-if command -v starship >/dev/null 2>&1; then
-    eval "$(starship init zsh)"
-fi
+# --- Prompt ---
+PROMPT="%F{blue}%~%f %F{green}❯%f "
 EOF
     print_success ".zshrc organized (Previous config backed up to .zshrc.bak)."
 }
 
 setup_tmux() {
     print_info "Configuring Tmux..."
-    cat > ~/.tmux.conf << 'EOF'
-unbind C-b
-set -g prefix C-a
-bind C-a send-prefix
-set -g mouse on
-set -g base-index 1
-setw -g pane-base-index 1
-set -g renumber-windows on
-set -g default-terminal "tmux-256color"
-set -ga terminal-overrides ",*256col*:Tc"
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
-bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
-bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
-bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
-bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'christoomey/vim-tmux-navigator'
-if "test ! -d ~/.tmux/plugins/tpm" "run 'git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins'"
-run '~/.tmux/plugins/tpm/tpm'
-EOF
+    mkdir -p "$HOME/.config/tmux"
+    cp "$SCRIPT_DIR/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+    # Create symlink/copy for ~/.tmux.conf for maximum compatibility
+    cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
+    print_success "Tmux configured."
 }
 
 setup_neovim() {
     print_info "Configuring Neovim..."
-    mkdir -p ~/.config/nvim
-    cat > ~/.config/nvim/init.lua << 'EOF'
-vim.opt.termguicolors = true
-vim.env.PATH = vim.fn.expand("~/.local/bin") .. ":" .. vim.fn.expand("~/.cargo/bin") .. ":" .. vim.env.PATH
-vim.opt.number = true
-vim.opt.relativenumber = true
-vim.opt.cursorline = true
-vim.opt.shiftwidth = 4
-vim.g.mapleader = " "
-vim.keymap.set("n", "<leader>cd", vim.cmd.Ex)
-
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({"git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath})
-end
-vim.opt.rtp:prepend(lazypath)
-
-require("lazy").setup({
-  { "folke/tokyonight.nvim", config = function() vim.cmd.colorscheme("tokyonight") end },
-  { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" }, opts = { theme = 'tokyonight' } },
-  { "saghen/blink.cmp", version = "*", opts = { keymap = { preset = "default" }, sources = { default = { "lsp", "path", "snippets", "buffer" } } } },
-  { "zbirenbaum/copilot.lua", cmd = "Copilot", event = "InsertEnter", config = function() require("copilot").setup({ suggestion = { enabled = true, auto_trigger = true, keymap = { accept = "<M-l>" } } }) end },
-  { "neovim/nvim-lspconfig" },
-  { "mason-org/mason.nvim" },
-  { "christoomey/vim-tmux-navigator", lazy = false },
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", opts = { highlight = { enable = true }, ensure_installed = { "c", "lua", "vim", "python" }, auto_install = true }, config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end },
-})
-
-require("mason").setup()
-if vim.lsp.enable then vim.lsp.enable({"clangd", "lua_ls", "pyright"}) end
-EOF
+    mkdir -p "$HOME/.config"
+    if [ -d "$HOME/.config/nvim" ]; then
+        print_info "Backing up existing Neovim configuration..."
+        mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak.$(date +%Y%m%d-%H%M%S)"
+    fi
+    cp -r "$SCRIPT_DIR/nvim" "$HOME/.config/nvim"
+    print_success "Neovim configured."
 }
 
 main() {
     print_info "Starting Comprehensive Setup..."
     
     # Essential Tools
-    install_package nvim
+    install_proper_neovim
     install_package tmux
-    install_package starship
     install_package git
     install_package curl
     install_package zsh
@@ -224,9 +337,18 @@ main() {
     setup_neovim
     
     # Change Shell
-    if [ "$SHELL" != "$(which zsh)" ]; then
-        print_info "Changing default shell to zsh..."
-        chsh -s "$(which zsh)"
+    if command_exists zsh; then
+        ZSH_PATH="$(command -v zsh)"
+        if [ "$SHELL" != "$ZSH_PATH" ]; then
+            print_info "Changing default shell to zsh..."
+            if chsh -s "$ZSH_PATH"; then
+                print_success "Shell changed to zsh successfully."
+            else
+                print_warning "Failed to change shell using chsh."
+                print_info "You can manually set it by running: chsh -s $ZSH_PATH"
+                print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
+            fi
+        fi
     fi
 
     print_success "Setup Complete! PLEASE RESTART YOUR TERMINAL."
