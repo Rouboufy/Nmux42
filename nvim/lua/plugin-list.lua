@@ -21,4 +21,14 @@ return {
     "MunifTanjim/nui.nvim",
     "nvim-neo-tree/neo-tree.nvim",
     "goolord/alpha-nvim",
+    -- Preinstalled themes
+    "catppuccin/nvim",
+    "Mofiqul/vscode.nvim",
+    "ellisonleao/gruvbox.nvim",
+    "shaunsingh/nord.nvim",
+    "sontungex/matteblack.nvim",
+    { "rose-pine/neovim", name = "rose-pine" },
+    "rebelot/kanagawa.nvim",
+    "EdenEast/nightfox.nvim",
+    { "bjarneo/aether.nvim", branch = "v3" },
 }

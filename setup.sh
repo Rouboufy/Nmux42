@@ -322,6 +322,20 @@ main() {
     install_package curl
     install_package zsh
     
+    # Search Tools
+    install_package ripgrep
+    if ! command_exists fd && ! command_exists fdfind; then
+        if [ "$IS_ARCH" = true ] && command_exists pacman && has_sudo; then
+            install_package fd
+        elif command_exists apt-get && has_sudo; then
+            install_package fd-find
+        elif command_exists dnf && has_sudo; then
+            install_package fd-find
+        else
+            install_package fd
+        fi
+    fi
+    
     # Compilers & Runtimes
     install_package gcc
     install_package clang

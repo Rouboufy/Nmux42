@@ -5,13 +5,19 @@ end
 
 local dashboard = require("alpha.themes.dashboard")
 
--- ASCII logo for Nmux42
 dashboard.section.header.val = {
     [[  _   _                            _  _    ____   ]],
     [[ | \ | | _ __ ___   _   _ __  __  | || |  |___ \  ]],
     [[ |  \| || '_ ` _ \ | | | |\ \/ /  | || |_   __) | ]],
     [[ | |\  || | | | | || |_| | >  <   |__   _| / __/  ]],
     [[ |_| \_||_| |_| |_| \__,_|/_/\_\     |_|  |_____| ]],
+}
+dashboard.section.header.opts.hl = {
+    "DiagnosticError",
+    "DiagnosticWarning",
+    "DiagnosticInfo",
+    "DiagnosticHint",
+    "Type",
 }
 
 dashboard.section.buttons.val = {

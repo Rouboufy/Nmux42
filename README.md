@@ -30,7 +30,7 @@ bash setup.sh
 ## 📦 What's Included?
 
 ### Core Applications
-- **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, interactive welcome dashboard, Japonette TUI, and LSP settings.
+- **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, interactive welcome dashboard, [Japonette TUI](https://github.com/sakemyali/japonette) integration, interactive theme selector, and LSP settings.
 - **Tmux**: Power-user configuration with `Ctrl-a` prefix and pane navigation shortcuts.
 - **Zsh**: Automatically configured as the default shell with a clean prompt.
 
@@ -55,6 +55,7 @@ bash setup.sh
 | `Ctrl + e` | Toggle Harpoon Menu |
 | `<leader>ja` | **Open Japonette TUI** (Active Campus tab) |
 | `<leader>jf` | **Open Japonette TUI** (Friends Watchlist tab) |
+| `<leader>th` | **Select Colorscheme TUI** (interactive selector with preview pane) |
 
 #### Japonette TUI Buffer Controls
 | Key | Action |
