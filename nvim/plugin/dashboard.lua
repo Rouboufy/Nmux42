@@ -97,21 +97,25 @@ dashboard.section.buttons.val = {
                                 close_confirm()
                                 vim.notify("Nmux42: Performing hard reload...", vim.log.levels.INFO)
                                 
-                                -- 1. Clear Nmux42 related packages from cache
+                                -- 1. WIPE EVERYTHING FIRST (ensure no stale buffers)
+                                vim.cmd("silent! bufdo! bwipeout")
+
+                                -- 2. Clear Nmux42 related packages from cache
                                 for name, _ in pairs(package.loaded) do
                                     if name:match("^config%.") or name:match("^manage$") or 
-                                       name:match("^plugins%.") or name:match("^diagnostics%.") then
+                                       name:match("^plugins%.") or name:match("^diagnostics%.") or
+                                       name:match("^norm%-format$") then
                                         package.loaded[name] = nil
                                     end
                                 end
                                 
-                                -- 2. Re-execute init.lua
+                                -- 3. Re-execute init.lua
                                 local init_path = vim.fn.stdpath("config") .. "/init.lua"
                                 if vim.fn.filereadable(init_path) == 1 then
                                     dofile(init_path)
                                 end
                                 
-                                -- 3. Force dashboard to redraw
+                                -- 4. Re-launch dashboard
                                 vim.cmd("Alpha")
                             end, { buffer = confirm_buf, silent = true })
                             

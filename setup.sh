@@ -637,11 +637,7 @@ main() {
 
     if [ "$IS_UPDATE" = true ]; then
         if [ -n "$NVIM" ]; then
-            print_info "Detected Neovim environment. Triggering automatic configuration reload..."
-            # Use nvim --server to send the reload command to the parent Neovim
-            # We use <C-\><C-n> to ensure we are in normal mode before sourcing
-            nvim --server "$NVIM" --remote-send "<C-\><C-n>:source \$HOME/.config/nvim/init.lua<CR>:Alpha<CR>" 2>/dev/null || true
-            print_success "Update Complete! Neovim has been reloaded."
+            print_info "Update successful. Please use the reload prompt in Neovim to apply changes."
         else
             print_success "Update Complete! Please restart Neovim to apply changes."
         fi
