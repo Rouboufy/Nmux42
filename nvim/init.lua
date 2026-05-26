@@ -3,7 +3,6 @@ require("config.keybinds")
 require("manage").setup()
 
 -- Custom 42 Diagnostics
-print("INIT_DEBUG: Initializing custom diagnostics")
 pcall(function() require("diagnostics.norminette").setup() end)
 
 -- Load active colorscheme dynamically

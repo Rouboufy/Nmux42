@@ -23,8 +23,6 @@ function M.run()
         end
     end
 
-    print("NORMINETTE_DEBUG: Running on " .. vim.fn.fnamemodify(path, ":t"))
-
     vim.fn.jobstart({ cmd, path }, {
         stdout_buffered = true,
         on_stdout = function(_, data)
@@ -45,7 +43,6 @@ function M.run()
                 end
             end
             vim.diagnostic.set(ns, buf, diagnostics)
-            print("NORMINETTE_DEBUG: Found " .. #diagnostics .. " errors")
         end,
     })
 end
