@@ -23,22 +23,26 @@ bash setup.sh
 ## ✨ "Smart" Features
 
 - **Arch Linux Native**: Automatically detects Arch and uses `pacman` with `sudo` for high-performance native binaries.
-- **42 School & macOS Optimized**: Falls back to **Homebrew** if `sudo` is unavailable or on macOS.
+- **42 School & Cluster Optimized**: 
+    - **100% Sudo-free**: Bypasses root requirements for Homebrew and NPM global installs.
+    - **SSL Fix**: Automatically bypasses certificate errors on the 42 network proxy (`strict-ssl false`).
+    - **Node Management**: Automatically upgrades Node.js to LTS via `nvm` if the system version is too old for modern tools.
 - **Auto-Configured Shell**: Generates a clean, organized `.zshrc` with auto-loading for Homebrew, aliases, and custom prompt.
 - **Automated PATH Management**: Handles `~/.local/bin`, `~/.cargo/bin`, and Homebrew paths automatically.
+- **Cleanup Routine**: The installer automatically cleans up temporary download files and build caches (NPM/Brew) to save space.
 
 ## 📦 What's Included?
 
 ### Core Applications
-- **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, interactive welcome dashboard, [Japonette TUI](https://github.com/sakemyali/japonette) integration, interactive theme selector, and LSP settings.
+- **Neovim**: Customized with a custom stable plugin manager, Neo-tree explorer, colorful interactive welcome dashboard, [Japonette TUI](https://github.com/sakemyali/japonette) integration, interactive theme selector, and LSP settings.
 - **Tmux**: Power-user configuration with `Ctrl-a` prefix, pane navigation shortcuts, and **automatic color sync with the active Neovim colorscheme**.
 - **Zsh**: Automatically configured as the default shell with a clean prompt. **Auto-attaches to a tmux session** on every terminal open.
 - **JetBrainsMono Nerd Font**: Automatically downloaded and installed to `~/.local/share/fonts` (no sudo). Required for icons in Neo-tree, lualine, and the dashboard.
 
 ### Compilers & Runtimes (Auto-Installed)
-- **C/C++**: `gcc`, `clang`
-- **Python**: `python3` (with `pyright` LSP)
-- **Go**: `go`
+- **C/C++**: `gcc`, `clang`, `ripgrep`, `fd-find` (essential for fast fuzzy finding).
+- **Python**: `python3` (with `pyright` LSP).
+- **Go**: `go`.
 - **Optional**: `Zig`, `Node.js`, `TypeScript`, `JavaScript`, `Japonette` (via interactive prompts).
 
 ## ⌨️ Keybindings
@@ -57,22 +61,24 @@ bash setup.sh
 | `<leader>Jf` | **Open Japonette TUI** (Friends Watchlist tab) |
 | `<leader>th` | **Select Colorscheme TUI** (live preview + tmux sync) |
 | `<leader>vb` / `<leader>?` | **Vim Bindings Reference** (motions + custom keys) |
-| `<leader>hk` | Custom Nmux42 keybinds quick-help |
-| `<leader>hp` | Plugins manager list |
-| `<leader>db` | Return to welcome dashboard |
+| `<leader>hk` | Custom Nmux42 keybinds quick-help popup |
+| `<leader>hp` | Plugins manager / list popup |
+| `<leader>db` | **Return to welcome dashboard** |
+| `<leader>ft` | Toggle floating terminal (Flterm) |
 
-#### 🌿 Git Keybinds (gitsigns + lazygit)
+#### 🌿 Git Keybinds (Unified TUI + Gitsigns)
 | Shortcut | Action |
 |----------|--------|
-| `<leader>gg` | **Open LazyGit** (full TUI) |
-| `<leader>gf` | LazyGit file log |
+| `<leader>gg` | **Open Git TUI** (LazyGit with smart fallback) |
+| `<leader>gl` | Open Git Log (Custom TUI) |
+| `<leader>gd` | Open Git Diff (Custom TUI) |
+| `<leader>gf` | LazyGit file log / filter |
 | `<leader>gc` | LazyGit current file history |
-| `<leader>gs` | Stage hunk under cursor |
-| `<leader>gr` | Reset hunk under cursor |
-| `<leader>gS` | Stage entire buffer |
-| `<leader>gu` | Undo last staged hunk |
+| `<leader>gs` | Gitsigns: stage hunk under cursor |
+| `<leader>gr` | Gitsigns: reset hunk under cursor |
+| `<leader>gS` | Gitsigns: stage entire buffer |
+| `<leader>gu` | Gitsigns: undo last staged hunk |
 | `<leader>gp` | Preview hunk inline |
-| `<leader>gd` | Diff this vs index |
 | `<leader>gb` | Toggle inline git blame |
 | `]h` / `[h` | Jump to next / previous git hunk |
 | `ih` | Text object: select hunk (in operator/visual mode) |
@@ -91,13 +97,6 @@ bash setup.sh
 | `h` | Show help cheatsheet |
 | `q` / `<Esc>` | Close the Japonette TUI window |
 
-#### Vim Bindings Reference TUI
-| Key | Action |
-|-----|--------|
-| `Tab` / `1` / `2` | Switch between **Vim Motions** and **Nmux42 Keys** tabs |
-| `/` | Search within the reference |
-| `q` / `Esc` | Close the window |
-
 
 ### 🖥️ Tmux & Navigation
 | Shortcut | Action |
@@ -107,18 +106,24 @@ bash setup.sh
 | `Ctrl + a` followed by `-` | Split Horizontal |
 | **`Alt + h/j/k/l`** | **Direct Navigation** between Tmux panes (No prefix needed!) |
 
+## 🎨 Theme Selection & Sync
+Nmux42 comes with preinstalled premium themes: **Catppuccin, TokyoNight, Cyberdream, Rose Pine, Gruvbox, Nord, Kanagawa, Nightfox, Matte Black, and Aether**.
+
+1. Press `<Space>th` inside Neovim.
+2. Scroll through the themes on the left; the code preview on the right updates in real-time.
+3. Press **Enter** to save. **Tmux colors will automatically update to match!**
+
 ## 🛠️ Post-Installation
 1. **Restart your terminal** after running `setup.sh`.
 2. Your terminal will **automatically open inside a tmux session** (`main`) on every launch.
 3. Open Neovim (`nvim`) and wait for the custom plugin manager to download/clone the plugins automatically on first boot.
 4. **Set your terminal emulator font** to `JetBrainsMono Nerd Font` (or `JetBrainsMono NF`) for all icons to render correctly. The font is already installed to `~/.local/share/fonts/` by the setup script.
 5. Run `:Mason` to manage additional LSPs and formatters.
-6. Press `<Space>th` to open the theme selector — selecting a theme **automatically recolors tmux** to match in real-time.
 
 ## 📂 Organized .zshrc
 The script generates a structured `.zshrc` including:
-- **Environment**: Proper PATH exports for all your tools.
-- **Homebrew**: Auto-detection and loading.
+- **Environment**: Proper PATH exports for all your tools, including local NPM and Go binaries.
+- **Homebrew**: Auto-detection and loading for Linuxbrew.
+- **Auto-Tmux**: Logic to attach to or create a session on startup.
 - **Aliases**: `v` (nvim), `ll` (long list), `gs` (git status).
-- **History**: Optimized history settings and completions.
 - **Prompt**: A fast, clean shell prompt initialized at the end.
