@@ -8,7 +8,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v0.0.1-7c6af5?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.0.2-7c6af5?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-42%20School-5ddbb8?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Arch%20Linux-1793d1?style=flat-square&logo=arch-linux&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-macOS-f5876a?style=flat-square&logo=apple&logoColor=white)
