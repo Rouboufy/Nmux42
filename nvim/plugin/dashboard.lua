@@ -33,7 +33,7 @@ for i, line in ipairs(logo) do
 end
 
 dashboard.section.buttons.val = {
-    dashboard.button("n", "󰝒  New File",             "<cmd>enew<cr>"),
+    dashboard.button("n", "󰝒  New File",             "<cmd>NewFile<cr>"),
     dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
     dashboard.button("r", "󰄉  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
     dashboard.button("e", "󰙅  File Explorer",        "<cmd>Neotree toggle<cr>"),
