@@ -15,7 +15,7 @@
 ![License](https://img.shields.io/badge/license-MIT-888888?style=flat-square)
 
 **A professional, high-performance development environment for 42 School, Arch Linux, and macOS.**
-One-command setup for Neovim, Tmux, Zsh, and Bash.
+One-command setup for Nmux42, an isolated Neovim + Tmux environment.
 
 </div>
 
@@ -29,18 +29,24 @@ cd Nmux42
 bash setup.sh
 ```
 
+Make sure `~/.local/bin` is in your `PATH`. Then run:
+```bash
+nmux
+```
+
 | Action | Command |
 |--------|---------|
 | **Install** | `bash setup.sh` |
+| **Run** | `nmux` |
+| **Run Neovim directly** | `nmux --no-tmux` |
 | **Update** | `bash update.sh` or press `u` on the Neovim dashboard |
 | **Uninstall** | `bash uninstall.sh` |
-| **Disable Tmux only** | `bash uninstall.sh --disable-tmux` |
 
 ---
 
 ## ✨ Smart Features
 
-Nmux42 detects your environment and adapts automatically — no manual tweaking needed.
+Nmux42 installs as an isolated standalone app that won't modify your existing Neovim or shell configurations.
 
 - **Arch Linux native** — detects Arch and uses `pacman` with `sudo` for high-performance native binaries
 - **100% Sudo-free** — bypasses root requirements for Homebrew and NPM installs, works on 42 clusters
@@ -59,7 +65,7 @@ Nmux42 detects your environment and adapts automatically — no manual tweaking 
 |------|-------------|
 | **Neovim** | Custom plugin manager, Neo-tree explorer, interactive dashboard, [Japonette TUI](https://github.com/sakemyali/japonette), live theme selector, LSP support |
 | **Tmux** | `Ctrl-a` prefix, pane navigation shortcuts, automatic color sync with the active Neovim colorscheme |
-| **Zsh / Bash** | Optimized configurations for both shells with clean prompts |
+| **Zsh / Bash** | Completely untouched. The isolated app runs via the `nmux` command without modifying your shell rc files. |
 | **JetBrainsMono Nerd Font** | Auto-installed to `~/.local/share/fonts/` (no sudo) — required for icons |
 
 ### Compilers & Runtimes
@@ -155,40 +161,23 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 🗑️ Uninstall
 
-**Interactive menu** — prompts you to choose between full removal or disabling Tmux only:
+Uninstall Nmux42 and clean up all configuration, data, cache, and state files:
 ```bash
 bash uninstall.sh
 ```
 
-**Disable Tmux auto-launch only** — keeps all plugins and configs intact:
-```bash
-bash uninstall.sh --disable-tmux
-```
-
-> A backup is created (e.g., `~/.zshrc.pre-tmux-disable`) before any shell configuration modifications.
 > During a full uninstall, the script prompts before removing NVM or Homebrew.
 
 ---
 
 ## 🛠️ Post-Installation
 
-1. **Restart your terminal** after running `setup.sh`.
-2. Your terminal will **automatically open inside a tmux session** (`main`) on every launch.
-3. Open Neovim (`nvim`) — the plugin manager will **download all plugins automatically** on first boot.
+1. Ensure `~/.local/bin` is in your `PATH`.
+2. Launch the environment by running:
+   ```bash
+   nmux
+   ```
+3. Neovim will automatically download all plugins on first launch.
 4. Set your terminal emulator font to **JetBrainsMono Nerd Font** (or `JetBrainsMono NF`). Already installed at `~/.local/share/fonts/`.
 5. Run `:Mason` inside Neovim to manage additional LSPs and formatters.
-
----
-
-## 📂 Generated Shell Configurations
-
-The setup script produces clean, organized `.zshrc` and `.bashrc` files:
-
-| Section | Contents |
-|---------|----------|
-| **Environment** | PATH exports for local NPM, Go binaries, Cargo, Homebrew |
-| **Homebrew** | Auto-detection and loading for Homebrew/Linuxbrew |
-| **Auto-Tmux** | Logic to attach to or create a session on startup |
-| **Aliases** | `v` → `nvim` · `ll` → long list · `gs` → `git status` |
-| **Prompt** | Fast, clean shell prompt |
 
