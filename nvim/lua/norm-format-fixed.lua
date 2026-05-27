@@ -13,7 +13,6 @@ function M.setup(opts)
 end
 
 function M.format()
-    vim.notify("Norm-format: Formatting...", vim.log.levels.INFO)
     local bufnr = vim.api.nvim_get_current_buf()
     local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     if #all_lines == 0 then return end
@@ -43,14 +42,17 @@ function M.format()
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     local result = {}
     local in_function = false
+    local last_was_decl = false
     
     for i, line in ipairs(lines) do
         local line_idx = i - 1
         
         if has_header and line_idx < 12 then
             table.insert(result, header_lines[i] or line)
+            last_was_decl = false
         else
             line = line:gsub("%s+$", "") -- Trim trailing
+            local is_empty = line:match("^%s*$")
             
             -- Indentation: Force Tabs
             while line:match("^%t*    ") do
@@ -68,7 +70,8 @@ function M.format()
                 end
             end
 
-            -- Type-Name Tabbing (Improved to handle multi-word types, pointers and assignments)
+            -- Type-Name Tabbing & 42 Norm Structural Fixes
+            local is_decl = false
             if not line:match("^#") and not line:match("^{") and not line:match("^}") then
                 -- Match indentation, type (greedy, excluding ( and ,), and name+rest
                 local indent, type, name_rest = line:match("^([%t%s]*)([^%(%,]+%S)%s+([%a_%*][%a%d_]*.*%;)")
@@ -76,7 +79,18 @@ function M.format()
                 if indent and type and name_rest then
                     local is_keyword = type:match("^return$") or type:match("^if$") or type:match("^while$") or type:match("^for$") or type:match("^switch$") or type:match("^else$")
                     if not is_keyword then
-                        line = indent .. type .. "\t" .. name_rest
+                        is_decl = true
+                        
+                        -- Split declaration and assignment (42 Norm: int i = 0; -> int i; i = 0;)
+                        local name, val = name_rest:match("^([%a_%*][%a%d_]*)%s*=%s*(.-);")
+                        if name and val then
+                            table.insert(result, indent .. type .. "\t" .. name .. ";")
+                            line = indent .. name .. " = " .. val .. ";"
+                            is_decl = false -- Current line is now an assignment, not a declaration
+                            last_was_decl = true -- Explicitly mark that a declaration just occurred
+                        else
+                            line = indent .. type .. "\t" .. name_rest
+                        end
                     end
                 elseif line:match("^[%a_][%a%d_%*]+%s+[%a_][%a%d_]*%s*%(") then
                     -- Functions at top level
@@ -87,11 +101,18 @@ function M.format()
                 end
             end
             
+            -- Newline after declarations (42 Norm)
+            if last_was_decl and not is_decl and not is_empty and not line:match("^%s*}") and not line:match("^%s*{") then
+                if #result > 0 and result[#result] ~= "" then
+                    table.insert(result, "")
+                end
+            end
+            last_was_decl = is_decl
+
             -- Empty Line Logic
             if line:match("^{") then in_function = true end
             if line:match("^}") then in_function = false end
             
-            local is_empty = line:match("^%s*$")
             local skip = false
             if in_function and is_empty then
                 local prev = i > 1 and result[#result] or ""
