@@ -19,3 +19,7 @@ squashfs-root/
 node_modules/
 __pycache__/
 .venv/
+
+# Local test files & directories
+test/
+
