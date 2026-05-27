@@ -147,6 +147,12 @@ Press `<Space>th` to open the live theme selector. Selecting a theme automatical
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for instructions on how to get started.
+
+---
+
 ## 🗑️ Uninstall
 
 **Interactive menu** — prompts you to choose between full removal or disabling Tmux only:
