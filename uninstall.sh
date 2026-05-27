@@ -2,7 +2,17 @@
 
 # ========================================
 # Nmux42 Uninstaller Script
-# Reverts changes made by setup.sh
+# Removes all Nmux42 isolated directories and optional dependencies
+#
+# Nmux42 installs to its own isolated paths:
+#   Config:   ~/.config/nmux42/
+#   Data:     ~/.local/share/nmux42/
+#   State:    ~/.local/state/nmux42/
+#   Cache:    ~/.cache/nmux42/
+#   Launcher: ~/.local/bin/nmux
+#
+# This script does NOT touch ~/.zshrc, ~/.bashrc,
+# ~/.config/nvim/, or ~/.config/tmux/.
 # ========================================
 
 # Colors
@@ -17,56 +27,19 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-disable_tmux_autostart() {
-    # --- ZSH ---
-    ZSHRC="$HOME/.zshrc"
-    if [ -f "$ZSHRC" ]; then
-        if grep -q "# --- Auto-launch tmux ---" "$ZSHRC"; then
-            print_info "Disabling tmux auto-launch in .zshrc..."
-            cp "$ZSHRC" "${ZSHRC}.pre-tmux-disable"
-            sed -i '/# --- Auto-launch tmux ---/,/^fi/d' "$ZSHRC"
-            print_success "Tmux auto-launch disabled in .zshrc."
-        fi
-    fi
-
-    # --- BASH ---
-    BASHRC="$HOME/.bashrc"
-    if [ -f "$BASHRC" ]; then
-        if grep -q "# --- Auto-launch tmux ---" "$BASHRC"; then
-            print_info "Disabling tmux auto-launch in .bashrc..."
-            cp "$BASHRC" "${BASHRC}.pre-tmux-disable"
-            sed -i '/# --- Auto-launch tmux ---/,/^fi/d' "$BASHRC"
-            print_success "Tmux auto-launch disabled in .bashrc."
-        fi
-    fi
-    
-    print_info "Please restart your terminal for changes to take effect."
-}
-
-# Handle flags
-if [[ "$1" == "--disable-tmux" ]]; then
-    disable_tmux_autostart
-    exit 0
-fi
-
 # Main Menu
-print_info "Nmux42 Uninstaller / Configurator"
-echo -e "1) ${RED}Full Uninstall${NC} (Remove all configs, restore backups)"
-echo -e "2) ${YELLOW}Disable tmux auto-launch${NC} (Keep everything else)"
-echo -e "3) Cancel"
-read -p "Select an option [1-3]: " choice
+print_info "Nmux42 Uninstaller"
+echo -e "1) ${RED}Full Uninstall${NC} (Remove all Nmux42 data)"
+echo -e "2) Cancel"
+read -p "Select an option [1-2]: " choice
 
 case $choice in
     1)
-        read -p "Are you sure you want to uninstall Nmux42 and revert configuration changes? (y/N): " confirm
+        read -p "Are you sure you want to uninstall Nmux42? (y/N): " confirm
         if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
             print_info "Uninstall cancelled."
             exit 0
         fi
-        ;;
-    2)
-        disable_tmux_autostart
-        exit 0
         ;;
     *)
         print_info "Exiting."
@@ -74,63 +47,66 @@ case $choice in
         ;;
 esac
 
-# 1. Restore Shell Configs
-print_info "Restoring shell configurations..."
-# --- ZSH ---
-ZSHRC="$HOME/.zshrc"
-if [ -f "${ZSHRC}.bak" ]; then
-    mv "${ZSHRC}.bak" "$ZSHRC"
-    print_success ".zshrc restored from backup."
-else
-    if [ -f "$ZSHRC" ]; then
-        if grep -q "Organized ZSH Configuration" "$ZSHRC"; then
-            rm "$ZSHRC"
-            print_success "Removed generated .zshrc (no backup found)."
-        fi
+# ----------------------------------------
+# 1. Remove Nmux42 Isolated Directories
+# ----------------------------------------
+print_info "Removing Nmux42 configuration and data..."
+
+# Config directory (nvim config + tmux config live here)
+if [ -d "$HOME/.config/nmux42" ]; then
+    rm -rf "$HOME/.config/nmux42"
+    print_success "Removed ~/.config/nmux42/"
+fi
+
+# Data directory (plugins, mason, undo history)
+if [ -d "$HOME/.local/share/nmux42" ]; then
+    rm -rf "$HOME/.local/share/nmux42"
+    print_success "Removed ~/.local/share/nmux42/"
+fi
+
+# State directory
+if [ -d "$HOME/.local/state/nmux42" ]; then
+    rm -rf "$HOME/.local/state/nmux42"
+    print_success "Removed ~/.local/state/nmux42/"
+fi
+
+# Cache directory
+if [ -d "$HOME/.cache/nmux42" ]; then
+    rm -rf "$HOME/.cache/nmux42"
+    print_success "Removed ~/.cache/nmux42/"
+fi
+
+# Launcher script
+if [ -f "$HOME/.local/bin/nmux" ]; then
+    rm -f "$HOME/.local/bin/nmux"
+    print_success "Removed ~/.local/bin/nmux"
+fi
+
+# ----------------------------------------
+# 2. Remove Optional User-space Binaries
+# ----------------------------------------
+print_info "Checking optional user-space binaries..."
+
+if [ -f "$HOME/.local/bin/lazygit" ]; then
+    read -p "Remove lazygit from ~/.local/bin/lazygit? (y/N): " remove_lazygit
+    if [[ "$remove_lazygit" =~ ^[Yy]$ ]]; then
+        rm -f "$HOME/.local/bin/lazygit"
+        print_success "Removed ~/.local/bin/lazygit."
     fi
 fi
 
-# --- BASH ---
-BASHRC="$HOME/.bashrc"
-if [ -f "${BASHRC}.bak" ]; then
-    mv "${BASHRC}.bak" "$BASHRC"
-    print_success ".bashrc restored from backup."
-else
-    if [ -f "$BASHRC" ]; then
-        if grep -q "Organized BASH Configuration" "$BASHRC"; then
-            rm "$BASHRC"
-            print_success "Removed generated .bashrc (no backup found)."
-        fi
+if [ -f "$HOME/.local/bin/nvim" ] || [ -d "$HOME/.local/share/nvim-dist" ]; then
+    read -p "Remove Neovim from ~/.local/bin/nvim and ~/.local/share/nvim-dist? (y/N): " remove_nvim
+    if [[ "$remove_nvim" =~ ^[Yy]$ ]]; then
+        rm -f "$HOME/.local/bin/nvim"
+        rm -rf "$HOME/.local/share/nvim-dist"
+        print_success "Removed Neovim binary and distribution."
     fi
 fi
 
-# 2. Remove Configurations
-print_info "Removing configuration directories..."
-rm -rf "$HOME/.config/tmux"
-rm -f "$HOME/.tmux.conf"
-
-if [ -d "$HOME/.config/nvim" ]; then
-    rm -rf "$HOME/.config/nvim"
-    print_success "Removed ~/.config/nvim."
-    
-    # Check for backups created by setup.sh
-    LATEST_BAK=$(ls -td "$HOME"/.config/nvim.bak.* 2>/dev/null | head -n 1)
-    if [ -n "$LATEST_BAK" ]; then
-        read -p "Found a Neovim backup at $(basename "$LATEST_BAK"). Restore it? (y/N): " restore_nvim
-        if [[ "$restore_nvim" =~ ^[Yy]$ ]]; then
-            mv "$LATEST_BAK" "$HOME/.config/nvim"
-            print_success "Restored Neovim configuration from $LATEST_BAK."
-        fi
-    fi
-fi
-
-# 3. Remove User-space Binaries
-print_info "Removing user-space binaries..."
-rm -f "$HOME/.local/bin/lazygit"
-rm -f "$HOME/.local/bin/nvim"
-rm -rf "$HOME/.local/share/nvim-dist"
-
-# 4. Remove Node.js / NVM / NPM Global
+# ----------------------------------------
+# 3. Remove Node.js / NVM / NPM Global
+# ----------------------------------------
 if [ -d "$HOME/.nvm" ]; then
     read -p "Remove NVM and all installed Node.js versions in ~/.nvm? (y/N): " remove_nvm
     if [[ "$remove_nvm" =~ ^[Yy]$ ]]; then
@@ -140,14 +116,16 @@ if [ -d "$HOME/.nvm" ]; then
 fi
 
 if [ -d "$HOME/.npm-global" ]; then
-    read -p "Remove NPM global packages in ~/.npm-global (japonette, etc)? (y/N): " remove_npm
+    read -p "Remove NPM global packages in ~/.npm-global? (y/N): " remove_npm
     if [[ "$remove_npm" =~ ^[Yy]$ ]]; then
         rm -rf "$HOME/.npm-global"
         print_success "Removed ~/.npm-global."
     fi
 fi
 
-# 5. Remove Local Homebrew (Linuxbrew)
+# ----------------------------------------
+# 4. Remove Local Homebrew (Linuxbrew)
+# ----------------------------------------
 if [ -d "$HOME/.linuxbrew" ]; then
     read -p "Remove locally installed Homebrew in ~/.linuxbrew? (y/N): " remove_brew
     if [[ "$remove_brew" =~ ^[Yy]$ ]]; then
@@ -156,7 +134,9 @@ if [ -d "$HOME/.linuxbrew" ]; then
     fi
 fi
 
-# 6. Remove Fonts
+# ----------------------------------------
+# 5. Remove Fonts
+# ----------------------------------------
 print_info "Cleaning up fonts..."
 if [ -d "$HOME/.local/share/fonts" ]; then
     find "$HOME/.local/share/fonts" -name "JetBrainsMono*" -delete
@@ -166,10 +146,9 @@ if [ -d "$HOME/.local/share/fonts" ]; then
     print_success "Removed JetBrainsMono Nerd Fonts."
 fi
 
-# 7. Final Instructions
+# ----------------------------------------
+# 6. Final Summary
+# ----------------------------------------
 print_info "--- Uninstall Complete ---"
 print_warning "Note: System packages installed via pacman/apt/dnf/brew were NOT removed."
-if [ "$SHELL" != "/bin/bash" ]; then
-    print_info "Your current shell is $SHELL. To revert to bash, run: chsh -s /bin/bash"
-fi
 print_success "Nmux42 has been removed. Please restart your terminal."

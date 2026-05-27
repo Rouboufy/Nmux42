@@ -131,7 +131,7 @@ dashboard.section.buttons.val = {
             vim.notify("Update script not found at: " .. update_script, vim.log.levels.ERROR)
         end
     end),
-    dashboard.button("c", "󰒓  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
+    dashboard.button("c", "󰒓  Edit Config",          "<cmd>e " .. vim.fn.stdpath("config") .. "/init.lua<cr>"),
     dashboard.button("q", "󰈆  Quit",                 "<cmd>qa<cr>"),
 }
 

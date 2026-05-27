@@ -45,7 +45,9 @@ set.scrolloff = 8
 -- undo dir settings
 set.swapfile = false
 set.backup = false
-set.undodir = os.getenv("HOME") .. "/.vim/undodir"
+local undodir = vim.fn.stdpath("data") .. "/undo"
+vim.fn.mkdir(undodir, "p")
+set.undodir = undodir
 set.undofile = true
 
 -- incremental search
