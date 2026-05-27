@@ -152,10 +152,13 @@ local function open_theme_selector()
                 vim.api.nvim_echo({{"Failed to save colorscheme config.", "ErrorMsg"}}, false, {})
             end
             -- Sync tmux theme in the background (non-blocking)
-            local theme_script = vim.fn.stdpath("config") .. "/../tmux-theme.sh"
+            local theme_script = vim.fn.stdpath("config") .. "/tmux/tmux-theme.sh"
             if vim.fn.filereadable(theme_script) == 0 then
-                -- Fallback: try standard install location
-                theme_script = vim.fn.expand("~/.config/tmux/tmux-theme.sh")
+                -- Fallback: try repo location
+                local repo_ok, repo = pcall(require, "config.repo_info")
+                if repo_ok and repo.path then
+                    theme_script = repo.path .. "/tmux-theme.sh"
+                end
             end
             if vim.fn.filereadable(theme_script) == 1 then
                 vim.system({ "bash", theme_script, selected }, { detach = true })

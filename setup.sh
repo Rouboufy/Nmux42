@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # ========================================
-# Ultimate Dev Setup Script (42 & Arch Optimized)
-# Version: 0.0.2-nightly
+# Nmux42 Setup Script (Isolated App)
+# Version: see VERSION file
 # Author: Rouboufy
+# Installs to ~/.config/nmux42/ (does NOT
+# modify ~/.config/nvim, ~/.zshrc, etc.)
 # ========================================
 
 set -e
@@ -419,170 +421,73 @@ ask_optional() {
     fi
 }
 
-setup_organized_zshrc() {
-    print_info "Generating organized .zshrc..."
-    ZSHRC="$HOME/.zshrc"
+install_launcher() {
+    print_info "Installing nmux launcher..."
+    mkdir -p "$HOME/.local/bin"
+    cat > "$HOME/.local/bin/nmux" << 'LAUNCHER'
+#!/bin/bash
+# ========================================
+# Nmux42 — Isolated Development Environment
+# Launcher script — runs Neovim with its own
+# config, isolated from ~/.config/nvim
+# ========================================
+
+export NVIM_APPNAME="nmux42"
+NMUX_TMUX_CONF="$HOME/.config/nmux42/tmux/tmux.conf"
+
+# --no-tmux flag: skip tmux wrapper
+if [ "$1" = "--no-tmux" ]; then
+    shift
+    exec nvim "$@"
+fi
+
+# If already inside tmux, just launch nvim
+if [ -n "$TMUX" ]; then
+    exec nvim "$@"
+fi
+
+# Otherwise, launch nvim inside tmux with our isolated config
+if [ $# -eq 0 ]; then
+    exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim"
+else
+    exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim $*"
+fi
+LAUNCHER
+    chmod +x "$HOME/.local/bin/nmux"
+    print_success "nmux launcher installed to ~/.local/bin/nmux."
     
-    # Backup existing
-    if [ -f "$ZSHRC" ]; then
-        cp "$ZSHRC" "${ZSHRC}.bak"
+    # Ensure ~/.local/bin is in PATH
+    if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
+        print_warning "~/.local/bin is not in your PATH."
+        print_info "Add this to your shell config: export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
-
-    cat > "$ZSHRC" << 'EOF'
-# ========================================
-# Organized ZSH Configuration
-# ========================================
-
-# --- PATH & Environment ---
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
-
-# --- Homebrew ---
-if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-elif [ -x "/opt/homebrew/bin/brew" ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# --- Auto-launch tmux ---
-if [ -z "$TMUX" ]; then
-    tmux new-session -A -s main
-fi
-
-# --- Aliases ---
-alias v="nvim"
-alias vi="nvim"
-alias nvimconfig="cd ~/.config/nvim && v init.lua"
-alias ls="ls --color=auto"
-alias ll="ls -lah"
-alias gs="git status"
-
-# --- Nmux42 Launch Logic ---
-# Launch nvim inside a persistent tmux session named 'main'
-nmux() {
-    if [ -n "$TMUX" ]; then
-        nvim "$@"
-    else
-        tmux new-session -A -s main "nvim $@"
-    fi
-}
-# Override nvim to always launch inside tmux
-alias nvim="nmux"
-
-# --- Completion & History ---
-autoload -Uz compinit && compinit
-HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
-setopt APPEND_HISTORY
-setopt SHARE_HISTORY
-
-# --- nvm (Node Version Manager) ---
-# Loads nvm and makes the nvm-managed Node.js available in every shell
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
-# --- Prompt ---
-PROMPT="%F{blue}%~%f %F{green}❯%f "
-EOF
-    print_success ".zshrc organized (Previous config backed up to .zshrc.bak)."
-}
-
-setup_organized_bashrc() {
-    print_info "Generating organized .bashrc..."
-    BASHRC="$HOME/.bashrc"
-    
-    # Backup existing
-    if [ -f "$BASHRC" ]; then
-        cp "$BASHRC" "${BASHRC}.bak"
-    fi
-
-    cat > "$BASHRC" << 'EOF'
-# ========================================
-# Organized BASH Configuration
-# ========================================
-
-# --- PATH & Environment ---
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
-
-# --- Homebrew ---
-if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-elif [ -x "/opt/homebrew/bin/brew" ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# --- Auto-launch tmux ---
-if [ -z "$TMUX" ]; then
-    tmux new-session -A -s main
-fi
-
-# --- Aliases ---
-alias v="nvim"
-alias vi="nvim"
-alias nvimconfig="cd ~/.config/nvim && v init.lua"
-alias ls="ls --color=auto"
-alias ll="ls -lah"
-alias gs="git status"
-
-# --- Nmux42 Launch Logic ---
-# Launch nvim inside a persistent tmux session named 'main'
-nmux() {
-    if [ -n "$TMUX" ]; then
-        nvim "$@"
-    else
-        tmux new-session -A -s main "nvim $@"
-    fi
-}
-# Override nvim to always launch inside tmux
-alias nvim="nmux"
-
-# --- Completion & History ---
-HISTFILE=~/.bash_history
-HISTSIZE=10000
-HISTFILESIZE=10000
-shopt -s histappend
-
-# --- nvm (Node Version Manager) ---
-# Loads nvm and makes the nvm-managed Node.js available in every shell
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
-# --- Prompt ---
-PS1='\[\033[0;34m\]\w\[\033[0m\] \[\033[0;32m\]❯\[\033[0m\] '
-EOF
-    print_success ".bashrc organized (Previous config backed up to .bashrc.bak)."
 }
 
 setup_tmux() {
-    print_info "Configuring Tmux..."
-    mkdir -p "$HOME/.config/tmux"
-    cp "$SCRIPT_DIR/tmux.conf" "$HOME/.config/tmux/tmux.conf"
-    # Install the theme sync script
-    cp "$SCRIPT_DIR/tmux-theme.sh" "$HOME/.config/tmux/tmux-theme.sh"
-    chmod +x "$HOME/.config/tmux/tmux-theme.sh"
-    # Generate initial color palette from the current nvim theme (or default tokyonight)
-    bash "$HOME/.config/tmux/tmux-theme.sh" 2>/dev/null || true
-    # Create symlink/copy for ~/.tmux.conf for maximum compatibility
-    cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
+    print_info "Configuring Tmux (isolated in ~/.config/nmux42/tmux/)..."
+    mkdir -p "$HOME/.config/nmux42/tmux"
+    cp "$SCRIPT_DIR/tmux.conf" "$HOME/.config/nmux42/tmux/tmux.conf"
+    cp "$SCRIPT_DIR/tmux-theme.sh" "$HOME/.config/nmux42/tmux/tmux-theme.sh"
+    chmod +x "$HOME/.config/nmux42/tmux/tmux-theme.sh"
+    bash "$HOME/.config/nmux42/tmux/tmux-theme.sh" 2>/dev/null || true
     print_success "Tmux configured."
 }
 
 setup_neovim() {
-    print_info "Configuring Neovim..."
-    mkdir -p "$HOME/.config"
-    if [ -d "$HOME/.config/nvim" ]; then
-        print_info "Backing up existing Neovim configuration..."
-        mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak.$(date +%Y%m%d-%H%M%S)"
+    print_info "Configuring Neovim (isolated in ~/.config/nmux42/)..."
+    mkdir -p "$HOME/.config/nmux42"
+    # Remove old nmux42 config if exists (clean re-deploy)
+    if [ -d "$HOME/.config/nmux42" ]; then
+        rm -rf "$HOME/.config/nmux42/lua" "$HOME/.config/nmux42/plugin" "$HOME/.config/nmux42/after" "$HOME/.config/nmux42/queries" "$HOME/.config/nmux42/init.lua" 2>/dev/null || true
     fi
-    cp -r "$SCRIPT_DIR/nvim" "$HOME/.config/nvim"
+    # Copy nvim config files into the isolated directory
+    cp -r "$SCRIPT_DIR/nvim/"* "$HOME/.config/nmux42/"
     
     # Record the repository path for the Update feature
-    mkdir -p "$HOME/.config/nvim/lua/config"
-    echo "return { path = \"$SCRIPT_DIR\", version = \"$VERSION\" }" > "$HOME/.config/nvim/lua/config/repo_info.lua"
+    mkdir -p "$HOME/.config/nmux42/lua/config"
+    echo "return { path = \"$SCRIPT_DIR\", version = \"$VERSION\" }" > "$HOME/.config/nmux42/lua/config/repo_info.lua"
     
-    print_success "Neovim configured."
+    print_success "Neovim configured (isolated as NVIM_APPNAME=nmux42)."
 }
 
 # Install JetBrainsMono Nerd Font (user-space, no sudo)
@@ -652,7 +557,6 @@ main() {
     install_package tmux
     install_package git
     install_package curl
-    install_package zsh
     
     # Search Tools
     install_package ripgrep rg
@@ -678,37 +582,11 @@ main() {
     ask_optional
     
     # Configurations
-    setup_organized_zshrc
-    setup_organized_bashrc
+    install_launcher
     setup_tmux
     setup_neovim
     install_nerd_font
     
-    # Change Shell
-    if command_exists zsh; then
-        ZSH_PATH="$(command -v zsh)"
-        if [ "$SHELL" != "$ZSH_PATH" ]; then
-            if [ "$IS_UPDATE" = true ]; then
-                print_info "Your current shell is not zsh ($SHELL), but skipping shell change prompt during update."
-            else
-                print_info "Your current shell is not zsh ($SHELL)."
-                read -p "Would you like to change your default shell to zsh? (y/N): " change_shell
-                if [[ "$change_shell" =~ ^[Yy]$ ]]; then
-                    print_info "Changing default shell to zsh..."
-                    if chsh -s "$ZSH_PATH"; then
-                        print_success "Shell changed to zsh successfully."
-                    else
-                        print_warning "Failed to change shell using chsh."
-                        print_info "You can manually set it by running: chsh -s $ZSH_PATH"
-                        print_info "Or by adding 'exec $ZSH_PATH' to the end of your ~/.bashrc file."
-                    fi
-                else
-                    print_info "Skipping shell change. You can manually run: chsh -s $ZSH_PATH"
-                fi
-            fi
-        fi
-    fi
-
     # Cleanup temporary installation files & caches
     cleanup_installation_temp
 
@@ -716,10 +594,11 @@ main() {
         if [ -n "$NVIM" ]; then
             print_info "Update successful. Please use the reload prompt in Neovim to apply changes."
         else
-            print_success "Update Complete! Please restart Neovim to apply changes."
+            print_success "Update Complete! Run 'nmux' to start."
         fi
     else
-        print_success "Setup Complete! PLEASE RESTART YOUR TERMINAL."
+        print_success "Setup Complete! Run 'nmux' to start your development environment."
+        print_info "Make sure ~/.local/bin is in your PATH."
     fi
 }
 

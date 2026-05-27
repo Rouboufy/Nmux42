@@ -6,9 +6,12 @@
 
 THEME="${1:-}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NMUX_CONFIG_DIR="$(dirname "$SCRIPT_DIR")"
+
 # If no argument, try to read from the nvim theme config file
 if [ -z "$THEME" ]; then
-    THEME_FILE="$HOME/.config/nvim/lua/plugins/theme.lua"
+    THEME_FILE="$NMUX_CONFIG_DIR/lua/plugins/theme.lua"
     if [ -f "$THEME_FILE" ]; then
         THEME=$(grep -oE '"[^"]+"' "$THEME_FILE" | tr -d '"' | head -n1)
     fi
@@ -111,7 +114,7 @@ case "$BASE" in
 esac
 
 # ── Write tmux color config ────────────────────────────────────
-COLORS_FILE="${HOME}/.config/tmux/tmux-colors.conf"
+COLORS_FILE="${SCRIPT_DIR}/tmux-colors.conf"
 mkdir -p "$(dirname "$COLORS_FILE")"
 
 cat > "$COLORS_FILE" << EOF
@@ -132,7 +135,7 @@ EOF
 
 # ── Reload tmux if a session is running ───────────────────────
 if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
-    tmux source-file "$HOME/.config/tmux/tmux.conf" 2>/dev/null || true
+    tmux source-file "${SCRIPT_DIR}/tmux.conf" 2>/dev/null || true
 fi
 
 echo "tmux theme applied: ${THEME} (${BASE})"

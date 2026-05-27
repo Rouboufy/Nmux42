@@ -47,7 +47,7 @@ vim.keymap.set('n', '<leader>y', '<Plug>OSCYankOperator')
 vim.keymap.set('v', '<leader>y', '<Plug>OSCYankVisual')
 
 -- reload without exiting vim
-vim.keymap.set("n", "<leader>rl", "<cmd>source ~/.config/nvim/init.lua<cr>")
+vim.keymap.set("n", "<leader>rl", "<cmd>source " .. vim.fn.stdpath("config") .. "/init.lua<cr>")
 
 vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle)
 
