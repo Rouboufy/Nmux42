@@ -13,6 +13,7 @@ function M.setup(opts)
 end
 
 function M.format()
+    vim.notify("Norm-format: Formatting...", vim.log.levels.INFO)
     local bufnr = vim.api.nvim_get_current_buf()
     local all_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     if #all_lines == 0 then return end
