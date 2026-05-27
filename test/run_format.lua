@@ -1,0 +1,5 @@
+local nf = require("norm-format")
+print("Manually calling nf.format()...")
+nf.format()
+print("nf.format() called.")
+vim.cmd("write")

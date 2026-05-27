@@ -1,5 +1,5 @@
 local state = {
-    active_tab = "active", -- "active" or "friends"
+    active_tab = "active", -- "active", "friends", or "cluster"
     buf = nil,
     win = nil,
 }
@@ -127,17 +127,24 @@ local function render()
     
     local tab_active = " [1] Active Campus "
     local tab_friends = " [2] Friends List "
+    local tab_cluster = " [3] Cluster Map "
     if state.active_tab == "active" then
         tab_active = "●[1] Active Campus "
         tab_friends = "  [2] Friends List "
-    else
+        tab_cluster = "  [3] Cluster Map "
+    elseif state.active_tab == "friends" then
         tab_active = "  [1] Active Campus "
         tab_friends = "●[2] Friends List "
+        tab_cluster = "  [3] Cluster Map "
+    else
+        tab_active = "  [1] Active Campus "
+        tab_friends = "  [2] Friends List "
+        tab_cluster = "●[3] Cluster Map "
     end
     
     local header = {
         " Japonette (42 Campus Active & Watchlist) - Tab to toggle | h for help",
-        " " .. tab_active .. " │ " .. tab_friends,
+        " " .. tab_active .. " │ " .. tab_friends .. " │ " .. tab_cluster,
         "────────────────────────────────────────────────────────────────────────────────",
         " Loading data from 42 Intra API... Please wait.",
         "────────────────────────────────────────────────────────────────────────────────",
@@ -149,6 +156,15 @@ local function render()
     local cmd_args = "active"
     if state.active_tab == "friends" then
         cmd_args = "friends online"
+    elseif state.active_tab == "cluster" then
+        if state.cluster_user then
+            cmd_args = "cluster --user " .. state.cluster_user
+            state.cluster_user = nil -- Show once then revert to default or current name
+        elseif state.cluster_name then
+            cmd_args = "cluster --name " .. state.cluster_name
+        else
+            cmd_args = "cluster"
+        end
     end
     
     run_async_cmd(cmd_args, function(output)
@@ -160,7 +176,7 @@ local function render()
         
         local lines = {
             " Japonette (42 Campus Active & Watchlist) - Tab to toggle | h for help",
-            " " .. tab_active .. " │ " .. tab_friends,
+            " " .. tab_active .. " │ " .. tab_friends .. " │ " .. tab_cluster,
             "────────────────────────────────────────────────────────────────────────────────",
         }
         
@@ -169,7 +185,11 @@ local function render()
         end
         
         table.insert(lines, "────────────────────────────────────────────────────────────────────────────────")
-        table.insert(lines, " [r] Reload | [a] Add Friend | [d] Remove Friend | [Enter] Info | [c] Campus | [q] Close")
+        if state.active_tab == "cluster" then
+            table.insert(lines, " [r] Reload | [C] Select Cluster | [q] Close")
+        else
+            table.insert(lines, " [r] Reload | [a] Add Friend | [d] Remove Friend | [Enter] Info | [c] Campus | [q] Close")
+        end
         
         vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
         vim.bo[state.buf].modifiable = false
@@ -181,9 +201,13 @@ local function render()
         if state.active_tab == "active" then
             vim.api.nvim_buf_add_highlight(state.buf, ns, "DiagnosticOk", 1, 1, 20)
             vim.api.nvim_buf_add_highlight(state.buf, ns, "Comment", 1, 24, -1)
-        else
+        elseif state.active_tab == "friends" then
             vim.api.nvim_buf_add_highlight(state.buf, ns, "Comment", 1, 1, 20)
-            vim.api.nvim_buf_add_highlight(state.buf, ns, "DiagnosticOk", 1, 24, -1)
+            vim.api.nvim_buf_add_highlight(state.buf, ns, "DiagnosticOk", 1, 24, 46)
+            vim.api.nvim_buf_add_highlight(state.buf, ns, "Comment", 1, 50, -1)
+        else
+            vim.api.nvim_buf_add_highlight(state.buf, ns, "Comment", 1, 1, 46)
+            vim.api.nvim_buf_add_highlight(state.buf, ns, "DiagnosticOk", 1, 50, -1)
         end
         
         for i = 3, #lines - 1 do
@@ -226,6 +250,8 @@ local function set_keymaps(buf)
     map("<Tab>", function()
         if state.active_tab == "active" then
             state.active_tab = "friends"
+        elseif state.active_tab == "friends" then
+            state.active_tab = "cluster"
         else
             state.active_tab = "active"
         end
@@ -241,6 +267,11 @@ local function set_keymaps(buf)
         state.active_tab = "friends"
         render()
     end, "Friends Tab")
+
+    map("3", function()
+        state.active_tab = "cluster"
+        render()
+    end, "Cluster Tab")
     
     map("r", function()
         render()
@@ -285,6 +316,25 @@ local function set_keymaps(buf)
             inspect_user(login)
         end
     end, "Inspect User")
+
+    map("m", function()
+        local login = get_login_under_cursor()
+        if login then
+            state.active_tab = "cluster"
+            state.cluster_user = login
+            render()
+        end
+    end, "View Location on Map")
+
+    map("L", function()
+        vim.ui.input({ prompt = "Find user location (login): " }, function(input)
+            if input and input ~= "" then
+                state.active_tab = "cluster"
+                state.cluster_user = input
+                render()
+            end
+        end)
+    end, "Search User Location")
     
     map("c", function()
         vim.ui.input({ prompt = "Set Default Campus (slug): " }, function(input)
@@ -296,19 +346,35 @@ local function set_keymaps(buf)
             end
         end)
     end, "Set Campus")
+
+    map("C", function()
+        vim.ui.input({ prompt = "Select Cluster (name): " }, function(input)
+            if input and input ~= "" then
+                state.active_tab = "cluster"
+                -- This is a bit of a hack to pass the name to the command
+                -- We'll modify render to check for a temporary cluster_name
+                state.cluster_name = input
+                render()
+            end
+        end)
+    end, "Select Cluster")
     
     map("h", function()
         local help_text = {
             " Japonette TUI Help ",
             " ================== ",
-            " <Tab> : Toggle between Active Campus and Friends List tabs",
+            " <Tab> : Toggle between Active, Friends, and Cluster tabs",
             " 1     : Switch to Active Campus tab",
             " 2     : Switch to Friends List tab",
+            " 3     : Switch to Cluster Map tab",
             " r     : Reload the current list from the 42 Intra API",
             " a     : Add a 42 login to your local friends watchlist",
             " d     : Remove the friend under the cursor from watchlist",
             " o/Ent : Inspect details of the user under the cursor",
+            " m     : View the location of the user under the cursor",
+            " L     : Search for a specific user's location",
             " c     : Change your default campus",
+            " C     : Show a specific cluster map by name",
             " q/Esc : Close this TUI window",
         }
         local width = 60
@@ -425,5 +491,11 @@ vim.api.nvim_create_user_command("JaponetteFriends", function()
     open_japonette_tui()
 end, {})
 
+vim.api.nvim_create_user_command("JaponetteCluster", function()
+    state.active_tab = "cluster"
+    open_japonette_tui()
+end, {})
+
 vim.keymap.set("n", "<leader>Ja", "<cmd>JaponetteActive<cr>",  { desc = "Open Japonette Active TUI" })
 vim.keymap.set("n", "<leader>Jf", "<cmd>JaponetteFriends<cr>", { desc = "Open Japonette Friends TUI" })
+vim.keymap.set("n", "<leader>Jm", "<cmd>JaponetteCluster<cr>", { desc = "Open Japonette Cluster Map" })

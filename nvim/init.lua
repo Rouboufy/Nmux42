@@ -2,6 +2,9 @@ require("config.options")
 require("config.keybinds")
 require("manage").setup()
 
+-- Custom 42 Diagnostics
+pcall(function() require("diagnostics.norminette").setup() end)
+
 -- Load active colorscheme dynamically
 local active_theme = "tokyonight"
 local theme_ok, t = pcall(require, "plugins.theme")

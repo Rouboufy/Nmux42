@@ -33,14 +33,15 @@ for i, line in ipairs(logo) do
 end
 
 dashboard.section.buttons.val = {
-    dashboard.button("n", "  New File",             "<cmd>enew<cr>"),
-    dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
-    dashboard.button("r", "  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
-    dashboard.button("e", "  File Explorer",        "<cmd>Neotree toggle<cr>"),
-    dashboard.button("g", "  Git (TUI)",            "<cmd>GitUI<cr>"),
-    dashboard.button("J", "  Japonette Active",     "<cmd>JaponetteActive<cr>"),
-    dashboard.button("O", "👥  Japonette Friends",   "<cmd>JaponetteFriends<cr>"),
-    dashboard.button("v", "  Vim Bindings",         "<cmd>VimBindings<cr>"),
+    dashboard.button("n", "󰝒  New File",             "<cmd>NewFile<cr>"),
+    dashboard.button("f", "  Find File",            "<cmd>Telescope find_files<cr>"),
+    dashboard.button("r", "󰄉  Recent Files",         "<cmd>Telescope oldfiles<cr>"),
+    dashboard.button("e", "󰙅  File Explorer",        "<cmd>Neotree toggle<cr>"),
+    dashboard.button("g", "󰊢  Git (TUI)",            "<cmd>GitUI<cr>"),
+    dashboard.button("J", "󰴓  Japonette Active",     "<cmd>JaponetteActive<cr>"),
+    dashboard.button("O", "  Japonette Friends",    "<cmd>JaponetteFriends<cr>"),
+    dashboard.button("M", "󰹑  Cluster Map",          "<cmd>JaponetteCluster<cr>"),
+    dashboard.button("v", "󰌌  Vim Bindings",         "<cmd>VimBindings<cr>"),
     dashboard.button("p", "󰏖  Plugins Manager",     "<cmd>HelpPlugins<cr>"),
     dashboard.button("u", "󰚰  Update Nmux42",        function()
         local repo_info_ok, repo_info = pcall(require, "config.repo_info")
@@ -59,14 +60,79 @@ dashboard.section.buttons.val = {
                 row = row, col = col, border = 'rounded',
                 title = ' Nmux42 Update ', title_pos = 'center',
             })
-            vim.fn.termopen(update_script)
+            vim.fn.termopen(update_script, {
+                on_exit = function(_, exit_code)
+                    if exit_code == 0 then
+                        vim.api.nvim_win_close(win, true)
+                        
+                        -- Prompt user for reload
+                        vim.schedule(function()
+                            local confirm_buf = vim.api.nvim_create_buf(false, true)
+                            local c_width = 50
+                            local c_height = 5
+                            local c_row = math.floor((vim.o.lines - c_height) / 2)
+                            local c_col = math.floor((vim.o.columns - c_width) / 2)
+                            
+                            local confirm_win = vim.api.nvim_open_win(confirm_buf, true, {
+                                relative = 'editor', width = c_width, height = c_height,
+                                row = c_row, col = c_col, border = 'rounded',
+                                title = ' Nmux42 Reload ', title_pos = 'center',
+                            })
+                            
+                            vim.api.nvim_buf_set_lines(confirm_buf, 0, -1, false, {
+                                "",
+                                "  Nmux42 has been updated successfully!",
+                                "  A reload is required to apply the changes.",
+                                "",
+                                "         [y] Reload now    [n] Not now"
+                            })
+                            
+                            local function close_confirm()
+                                if vim.api.nvim_win_is_valid(confirm_win) then
+                                    vim.api.nvim_win_close(confirm_win, true)
+                                end
+                            end
+                            
+                            vim.keymap.set('n', 'y', function()
+                                close_confirm()
+                                
+                                local tmux_pane = os.getenv("TMUX_PANE")
+                                if tmux_pane then
+                                    vim.notify("Nmux42: Restarting via Tmux...", vim.log.levels.INFO)
+                                    -- Respawn the current pane with a fresh nvim process
+                                    -- -k kills the current process immediately
+                                    vim.fn.jobstart("tmux respawn-pane -k -c " .. vim.fn.shellescape(vim.fn.getcwd()) .. " nvim")
+                                else
+                                    -- Fallback for non-tmux environments
+                                    vim.notify("Nmux42: Performing soft reload...", vim.log.levels.INFO)
+                                    vim.cmd("silent! bufdo! bwipeout")
+                                    for name, _ in pairs(package.loaded) do
+                                        if name:match("^config%.") or name:match("^manage$") or 
+                                           name:match("^plugins%.") or name:match("^diagnostics%.") or
+                                           name:match("^norm%-format$") then
+                                            package.loaded[name] = nil
+                                        end
+                                    end
+                                    dofile(vim.fn.stdpath("config") .. "/init.lua")
+                                    vim.cmd("Alpha")
+                                end
+                            end, { buffer = confirm_buf, silent = true })
+                            
+                            vim.keymap.set('n', 'n', function()
+                                close_confirm()
+                                vim.notify("Update applied. Restart Neovim manually to see changes.", vim.log.levels.WARN)
+                            end, { buffer = confirm_buf, silent = true })
+                        end)
+                    end
+                end
+            })
             vim.cmd("startinsert")
         else
             vim.notify("Update script not found at: " .. update_script, vim.log.levels.ERROR)
         end
     end),
-    dashboard.button("c", "  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
-    dashboard.button("q", "  Quit",                 "<cmd>qa<cr>"),
+    dashboard.button("c", "󰒓  Edit Config",          "<cmd>e ~/.config/nvim/init.lua<cr>"),
+    dashboard.button("q", "󰈆  Quit",                 "<cmd>qa<cr>"),
 }
 
 local repo_info_ok, repo_info = pcall(require, "config.repo_info")
