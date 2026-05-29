@@ -447,10 +447,20 @@ if [ -n "$TMUX" ]; then
 fi
 
 # Otherwise, launch nvim inside tmux with our isolated config
-if [ $# -eq 0 ]; then
-    exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim"
+if tmux has-session -t nmux42 2>/dev/null && [ "$(tmux list-clients -t nmux42 2>/dev/null | wc -l)" -gt 0 ]; then
+    # Session exists and is occupied, create an independent session
+    if [ $# -eq 0 ]; then
+        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim"
+    else
+        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim $*"
+    fi
 else
-    exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim $*"
+    # Create or attach to the primary nmux42 session
+    if [ $# -eq 0 ]; then
+        exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim"
+    else
+        exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim $*"
+    fi
 fi
 LAUNCHER
     chmod +x "$HOME/.local/bin/nmux"
