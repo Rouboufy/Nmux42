@@ -147,7 +147,41 @@ if [ -d "$HOME/.local/share/fonts" ]; then
 fi
 
 # ----------------------------------------
-# 6. Final Summary
+# 6. Cleanup Active Sessions & Configs
+# ----------------------------------------
+print_info "Cleaning up active sessions and configurations..."
+
+# Kill running tmux sessions
+if command -v tmux >/dev/null 2>&1; then
+    if tmux has-session -t nmux42 2>/dev/null; then
+        print_info "Killing running nmux42 tmux sessions..."
+        # Kill any session starting with nmux42 (e.g., nmux42, nmux42-1)
+        tmux list-sessions -F '#S' | grep '^nmux42' | xargs -I{} tmux kill-session -t {}
+        print_success "Killed nmux42 tmux sessions."
+    fi
+fi
+
+# Revert npm config
+if command -v npm >/dev/null 2>&1; then
+    # Only if prefix was set to ~/.npm-global
+    CURRENT_PREFIX=$(npm config get prefix)
+    if [ "$CURRENT_PREFIX" = "$HOME/.npm-global" ]; then
+        print_info "Reverting npm global prefix..."
+        npm config delete prefix
+        print_success "Reverted npm global prefix."
+    fi
+    
+    # Revert strict-ssl if it was false
+    CURRENT_SSL=$(npm config get strict-ssl)
+    if [ "$CURRENT_SSL" = "false" ]; then
+        print_info "Reverting npm strict-ssl setting..."
+        npm config delete strict-ssl
+        print_success "Reverted npm strict-ssl."
+    fi
+fi
+
+# ----------------------------------------
+# 7. Final Summary
 # ----------------------------------------
 print_info "--- Uninstall Complete ---"
 print_warning "Note: System packages installed via pacman/apt/dnf/brew were NOT removed."
