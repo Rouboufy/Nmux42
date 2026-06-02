@@ -132,7 +132,7 @@ ensure_modern_node() {
     if [ ! -d "$HOME/.nvm" ]; then
         print_info "Downloading nvm..."
         curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh -o /tmp/nvm_install.sh
-        # Run install without modifying shell rc files (we add it manually to .zshrc below)
+        # Run install without modifying shell rc files
         PROFILE=/dev/null bash /tmp/nvm_install.sh
         rm -f /tmp/nvm_install.sh
     fi

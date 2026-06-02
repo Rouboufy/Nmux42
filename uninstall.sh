@@ -11,8 +11,8 @@
 #   Cache:    ~/.cache/nmux42/
 #   Launcher: ~/.local/bin/nmux
 #
-# This script does NOT touch ~/.zshrc, ~/.bashrc,
-# ~/.config/nvim/, or ~/.config/tmux/.
+# This script cleans up legacy shell rc modifications,
+# but does NOT touch ~/.config/nvim/ or ~/.config/tmux/.
 # ========================================
 
 # Colors
@@ -159,7 +159,30 @@ if command -v tmux >/dev/null 2>&1; then
         tmux list-sessions -F '#S' | grep '^nmux42' | xargs -I{} tmux kill-session -t {}
         print_success "Killed nmux42 tmux sessions."
     fi
+    if tmux has-session -t main 2>/dev/null; then
+        print_info "Killing legacy 'main' tmux session..."
+        tmux kill-session -t main
+        print_success "Killed 'main' tmux session."
+    fi
 fi
+
+# Clean up legacy shell rc modifications
+for rc_file in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    if [ -f "$rc_file" ] && grep -q "# --- Auto-launch tmux ---" "$rc_file"; then
+        print_info "Found legacy Auto-launch tmux block in $rc_file."
+        if [ -f "${rc_file}.bak" ]; then
+            print_info "Restoring backup ${rc_file}.bak..."
+            cp "${rc_file}.bak" "$rc_file"
+            print_success "Restored $rc_file from backup."
+        else
+            print_warning "No ${rc_file}.bak found. Attempting to remove the block..."
+            temp_rc=$(mktemp)
+            sed '/# --- Auto-launch tmux ---/,/^fi$/d' "$rc_file" > "$temp_rc"
+            mv "$temp_rc" "$rc_file"
+            print_success "Removed Auto-launch tmux block from $rc_file."
+        fi
+    fi
+done
 
 # Revert npm config
 if command -v npm >/dev/null 2>&1; then
