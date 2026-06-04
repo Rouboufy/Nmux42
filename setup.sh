@@ -132,7 +132,7 @@ ensure_modern_node() {
     if [ ! -d "$HOME/.nvm" ]; then
         print_info "Downloading nvm..."
         curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh -o /tmp/nvm_install.sh
-        # Run install without modifying shell rc files (we add it manually to .zshrc below)
+        # Run install without modifying shell rc files
         PROFILE=/dev/null bash /tmp/nvm_install.sh
         rm -f /tmp/nvm_install.sh
     fi
@@ -446,20 +446,28 @@ if [ -n "$TMUX" ]; then
     exec nvim "$@"
 fi
 
+# Safely quote arguments to preserve spaces in filenames
+printf -v ARGS '%q ' "$@"
+
 # Otherwise, launch nvim inside tmux with our isolated config
-if tmux has-session -t nmux42 2>/dev/null && [ "$(tmux list-clients -t nmux42 2>/dev/null | wc -l)" -gt 0 ]; then
-    # Session exists and is occupied, create an independent session
-    if [ $# -eq 0 ]; then
-        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim"
+if [ $# -gt 0 ]; then
+    # Arguments provided: we must ensure files are opened.
+    # Attaching to an existing session via -A ignores command arguments.
+    if tmux has-session -t nmux42 2>/dev/null; then
+        # Primary session exists. Create an independent session to open files.
+        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim $ARGS"
     else
-        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim $*"
+        # Primary session doesn't exist. Create it and open the files.
+        exec tmux -f "$NMUX_TMUX_CONF" new-session -s nmux42 "NVIM_APPNAME=nmux42 nvim $ARGS"
     fi
 else
-    # Create or attach to the primary nmux42 session
-    if [ $# -eq 0 ]; then
-        exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim"
+    # No arguments provided: attach to or create the primary session
+    if tmux has-session -t nmux42 2>/dev/null && [ "$(tmux list-clients -t nmux42 2>/dev/null | wc -l)" -gt 0 ]; then
+        # Primary session is currently occupied, create an independent session
+        exec tmux -f "$NMUX_TMUX_CONF" new-session "NVIM_APPNAME=nmux42 nvim"
     else
-        exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim $*"
+        # Create or attach to the primary session
+        exec tmux -f "$NMUX_TMUX_CONF" new-session -A -s nmux42 "NVIM_APPNAME=nmux42 nvim"
     fi
 fi
 LAUNCHER
