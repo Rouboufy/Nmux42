@@ -143,7 +143,11 @@ local function open_theme_selector()
         local selected = themes[r]
         if selected then
             local config_dir = vim.fn.stdpath("config")
-            local file = io.open(config_dir .. "/lua/plugins/theme.lua", "w")
+            local theme_dir = config_dir .. "/lua/plugins"
+            if vim.fn.isdirectory(theme_dir) == 0 then
+                vim.fn.mkdir(theme_dir, "p")
+            end
+            local file = io.open(theme_dir .. "/theme.lua", "w")
             if file then
                 file:write("return \"" .. selected .. "\"\n")
                 file:close()
