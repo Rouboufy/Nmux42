@@ -6,6 +6,10 @@
  |_| \_||_| |_| |_| \__,_|/_/\_\     |_|  |_____| 
 ```
 
+
+THIS PROJECT IS CURRENTLY NOT SUPPORTED CHECKOUT **[Tuim](https://github.com/Rouboufy/vide)** <-- for the current work in progress 
+
+
 <div align="center">
 
 ![Version](https://img.shields.io/badge/version-v0.0.2--nightly-7c6af5?style=flat-square)
